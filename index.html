@@ -237,6 +237,49 @@
     .topbar{flex-direction:column;align-items:flex-start;gap:12px;}
     #gasUrlInput{min-width:0 !important;width:100%;}
   }
+
+  /* ===== MODE SCREENSHOT (compact) ===== */
+  body.compact .wrap{max-width:1500px;padding:4px 22px 16px;}
+  body.compact .topbar{padding:12px 22px;}
+  body.compact .brand-mark{width:32px;height:32px;border-radius:10px;font-size:13px;}
+  body.compact .brand h1{font-size:14.5px;}
+  body.compact .brand p{font-size:10.5px;margin-top:0;}
+  body.compact .live-badge{padding:5px 11px;font-size:11px;}
+  body.compact #gasUrlInput{display:none;}
+  body.compact #connectBtn{display:none;}
+
+  body.compact .filters{padding:9px 14px;gap:9px;margin-bottom:10px;border-radius:12px;}
+  body.compact .field label{font-size:9px;}
+  body.compact select,body.compact input[type=text]{padding:5px 9px;font-size:11.5px;min-width:120px;border-radius:8px;}
+  body.compact .field.search input{min-width:150px;}
+  body.compact .date-nav button{height:29px;padding:0 10px;font-size:11px;}
+  body.compact .reset-btn{padding:6px 12px;font-size:11.5px;}
+
+  body.compact .panel,body.compact .table-panel{padding:12px 16px;border-radius:12px;}
+  body.compact .panel h2,body.compact .table-panel h2{font-size:12.5px;margin-bottom:2px;}
+  body.compact .panel-sub{font-size:10.5px;margin-bottom:8px;}
+  body.compact .summary-badge{font-size:10.5px;padding:4px 10px;}
+
+  body.compact #summaryTable thead th{padding:6px 9px;font-size:9px;}
+  body.compact #summaryTable tbody td{padding:5px 9px;font-size:11.5px;}
+  body.compact .type-bar{margin-top:3px;height:2px;}
+  body.compact .type-dot{width:6px;height:6px;margin-right:5px;}
+
+  body.compact .kpis-panel{margin-bottom:10px;border-radius:12px;}
+  body.compact .kpi-cell{padding:11px 8px;}
+  body.compact .kpi-cell .icon{width:20px;height:20px;margin-bottom:4px;}
+  body.compact .kpi-cell .label{font-size:8.5px;margin-bottom:5px;}
+  body.compact .kpi-cell .value{font-size:18px;margin-bottom:3px;}
+  body.compact .kpi-cell .sub{font-size:9.5px;}
+
+  body.compact .panels{gap:10px;margin-bottom:10px;}
+  body.compact .chart-box{height:150px;}
+  body.compact .chart-box.small{height:120px;}
+  body.compact .cat-rows{gap:4px;margin-top:8px;}
+  body.compact .cat-row{font-size:10.5px;}
+
+  body.compact .table-panel{display:none;}
+  body.compact footer{display:none;}
 </style>
 </head>
 <body>
@@ -251,6 +294,7 @@
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
     <input type="text" id="gasUrlInput" placeholder="Tempel URL Apps Script (.../exec) di sini" value="https://script.google.com/macros/s/AKfycbw41oPEoWHSecaueq-cBa-kXohm5tJPqaK4fiy8FYf-VjeyVbEZ4JGQM5ycPebD_X7J/exec" style="min-width:280px;">
+    <button class="reset-btn" id="compactBtn" style="white-space:nowrap;">&#128247; Mode Screenshot</button>
     <button class="reset-btn" id="connectBtn" style="white-space:nowrap;">Sambungkan</button>
     <button class="reset-btn" id="refreshBtn" style="white-space:nowrap;display:none;">&#8635; Refresh Data</button>
     <div class="live-badge" id="liveBadge"><span class="live-dot" id="liveDot" style="background:#A0A4BD;"></span> <span id="liveText">Snapshot (belum tersambung)</span></div>
@@ -628,6 +672,17 @@ connectBtn.addEventListener('click', ()=>{
   const url = gasUrlInput.value.trim();
   if(!url){ setLiveStatus('error', 'URL kosong'); return; }
   loadLiveData(url);
+});
+
+const compactBtn = document.getElementById('compactBtn');
+compactBtn.addEventListener('click', ()=>{
+  document.body.classList.toggle('compact');
+  const isCompact = document.body.classList.contains('compact');
+  compactBtn.innerHTML = isCompact ? '&#8617; Tampilan Normal' : '&#128247; Mode Screenshot';
+  // resize chart.js supaya menyesuaikan ukuran panel yang baru
+  setTimeout(()=>{
+    [catChart, statusChart, buChart].forEach(c=>{ if(c) c.resize(); });
+  }, 60);
 });
 
 // Auto-connect ke Apps Script yang sudah tertanam saat halaman dibuka

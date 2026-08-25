@@ -177,19 +177,52 @@
   .status-reschedule{background:#F3E4FF;color:#9333CE;}
   td.lama{font-family:'JetBrains Mono';color:var(--text-dim);white-space:nowrap;font-size:12px;}
 
-  #summaryTable thead th{
-    text-align:left;padding:9px 12px;color:var(--text-faint);font-weight:700;
-    text-transform:uppercase;letter-spacing:.045em;font-size:10.5px;border-bottom:2px solid var(--border);
-    white-space:nowrap;background:var(--panel-soft);
+  .summary-head-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:2px;flex-wrap:wrap;}
+  .summary-badge{
+    display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--violet-deep);
+    background:linear-gradient(135deg,#F1EDFF,#EAF9F6);border:1px solid #E4DCFF;padding:6px 14px;border-radius:20px;
+    white-space:nowrap;
   }
+  .summary-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--violet);box-shadow:0 0 0 3px rgba(124,92,252,.18);}
+
+  #summaryTable{border-spacing:0;}
+  #summaryTable thead th{
+    text-align:left;padding:12px 14px;color:var(--text-faint);font-weight:700;
+    text-transform:uppercase;letter-spacing:.06em;font-size:10.5px;
+    white-space:nowrap;background:linear-gradient(180deg,#FAFAFF,var(--panel-soft));
+    border-bottom:2px solid #E7E2FF;
+  }
+  #summaryTable thead th:first-child{border-radius:12px 0 0 0;position:sticky;left:0;z-index:2;background:linear-gradient(180deg,#FAFAFF,var(--panel-soft));}
+  #summaryTable thead th:last-child{border-radius:0 12px 0 0;color:var(--violet-deep);}
   #summaryTable thead th.num{text-align:right;}
-  #summaryTable tbody td{padding:9px 12px;border-bottom:1px solid var(--border-soft);white-space:nowrap;}
-  #summaryTable tbody td.num{text-align:right;font-family:'JetBrains Mono';color:var(--text-dim);}
-  #summaryTable tbody td.type-name{font-weight:600;color:var(--text);}
-  #summaryTable tbody td.grand{font-weight:700;color:var(--violet-deep);}
-  #summaryTable tbody tr.total-row{background:var(--panel-soft);font-weight:700;}
-  #summaryTable tbody tr.total-row td{color:var(--text);border-top:2px solid var(--border);}
-  #summaryTable tbody tr.total-row td.grand{color:var(--violet-deep);}
+  #summaryTable tbody td{padding:11px 14px;border-bottom:1px solid var(--border-soft);white-space:nowrap;transition:background .12s;}
+  #summaryTable tbody td.num{text-align:right;font-family:'JetBrains Mono';color:var(--text-dim);font-weight:500;font-variant-numeric:tabular-nums;border-radius:8px;}
+  #summaryTable tbody td.num.zero{color:var(--text-faint);opacity:.45;}
+  #summaryTable tbody td.type-name{
+    font-weight:700;color:var(--text);position:sticky;left:0;background:var(--panel);z-index:1;
+    box-shadow:2px 0 8px -6px rgba(20,20,60,.25);min-width:170px;
+  }
+  #summaryTable tbody tr:nth-child(even):not(.total-row) td.type-name{background:#FCFCFF;}
+  #summaryTable tbody tr:nth-child(even):not(.total-row) td:not(.type-name){background:rgba(124,92,252,.025);}
+  #summaryTable tbody tr:not(.total-row):hover td{background:#F1EDFF !important;}
+  #summaryTable tbody tr:not(.total-row):hover td.type-name{background:#F1EDFF !important;}
+  #summaryTable tbody td.grand{
+    font-weight:800;color:var(--violet-deep);background:#F5F2FF;border-radius:10px;
+  }
+  .type-dot{width:8px;height:8px;border-radius:3px;display:inline-block;margin-right:8px;flex-shrink:0;}
+  .type-name-inner{display:flex;align-items:center;}
+  .type-bar{height:3px;width:100%;max-width:130px;background:var(--border-soft);border-radius:3px;margin-top:7px;overflow:hidden;margin-left:16px;}
+  .type-bar-fill{height:100%;border-radius:3px;}
+  #summaryTable tbody tr.total-row{font-weight:700;}
+  #summaryTable tbody tr.total-row td{
+    color:var(--text);border-top:2px solid #E7E2FF;background:linear-gradient(135deg,#F8F6FF,#F1FBF9) !important;
+  }
+  #summaryTable tbody tr.total-row td.type-name{font-family:'Sora';font-weight:800;box-shadow:none;}
+  #summaryTable tbody tr.total-row td.grand{
+    color:#fff;background:linear-gradient(135deg,var(--violet),var(--violet-deep)) !important;
+    font-weight:800;box-shadow:0 4px 14px -6px rgba(91,61,240,.55);
+  }
+  #summaryTable tbody tr.total-row td:last-child{border-radius:10px;}
 
   .empty-state{padding:50px 20px;text-align:center;color:var(--text-faint);}
   .empty-state .glyph{font-size:28px;margin-bottom:10px;}
@@ -263,9 +296,14 @@
   </div>
 
   <div class="panel" style="margin-bottom:22px;">
-    <h2>Total Fleet Assets</h2>
-    <p class="panel-sub" id="summarySub">Total keseluruhan unit armada per Type dan Business Unit — sheet "Summary Total Armada"</p>
-    <div style="overflow-x:auto;">
+    <div class="summary-head-row">
+      <div>
+        <h2>Total Fleet Assets</h2>
+        <p class="panel-sub" id="summarySub" style="margin-bottom:0;">Total keseluruhan unit armada per Type dan Business Unit — sheet "Summary Total Armada"</p>
+      </div>
+      <div class="summary-badge" id="summaryBadge" style="display:none;"><span class="dot"></span><span id="summaryBadgeText">0 unit · 0 tipe</span></div>
+    </div>
+    <div style="overflow-x:auto;margin-top:14px;">
       <table id="summaryTable" style="width:100%;border-collapse:collapse;font-size:12.8px;">
         <thead id="summaryThead"></thead>
         <tbody id="summaryTbody"></tbody>
@@ -487,15 +525,31 @@ async function loadLiveData(url){
   }
 }
 
+const TYPE_PALETTE = ['#7C5CFC','#0FC2A6','#FF6B6B','#3D8BFF','#FFB020','#F5479C','#8BD450','#B366F0','#FF8A5C','#2FB8D4'];
+function typeColor(name){
+  let h = 0;
+  for(let i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) >>> 0;
+  return TYPE_PALETTE[h % TYPE_PALETTE.length];
+}
+function heatBg(val, max){
+  if(!val || !max) return '';
+  const t = Math.min(1, val/max);
+  const alpha = 0.06 + t*0.22;
+  return `background:rgba(124,92,252,${alpha.toFixed(3)});`;
+}
+
 function renderSummaryArmada(){
   const thead = document.getElementById('summaryThead');
   const tbody = document.getElementById('summaryTbody');
   const emptyState = document.getElementById('summaryEmpty');
   const table = document.getElementById('summaryTable');
+  const badge = document.getElementById('summaryBadge');
+  const badgeText = document.getElementById('summaryBadgeText');
 
   if(!SUMMARY_ARMADA || !SUMMARY_ARMADA.types || SUMMARY_ARMADA.types.length===0){
     table.style.display = 'none';
     emptyState.style.display = 'block';
+    badge.style.display = 'none';
     return;
   }
   table.style.display = '';
@@ -509,23 +563,45 @@ function renderSummaryArmada(){
     <th class="num">${grandTotalLabel || 'Grand Total'}</th>
   </tr>`;
 
-  const bodyRows = types.map(t=>`
+  // skala heatmap: nilai maksimum antar sel BU (bukan grand total)
+  let maxCell = 0;
+  types.forEach(t=>{ sBuList.forEach(b=>{ const v=parseInt(t.counts[b])||0; if(v>maxCell) maxCell=v; }); });
+
+  const overallTotal = totals ? (parseInt(totals[grandTotalLabel])||0) : types.reduce((s,t)=>s+(parseInt(t.counts[grandTotalLabel])||0),0);
+
+  const bodyRows = types.map(t=>{
+    const grandVal = parseInt(t.counts[grandTotalLabel]) || 0;
+    const barPct = overallTotal ? Math.max(2, Math.round(grandVal/overallTotal*100)) : 0;
+    const c = typeColor(t.Type);
+    return `
     <tr>
-      <td class="type-name">${t.Type}</td>
-      ${sBuList.map(b=>`<td class="num">${t.counts[b] || ''}</td>`).join('')}
-      <td class="num grand">${t.counts[grandTotalLabel] || ''}</td>
-    </tr>`).join('');
+      <td class="type-name">
+        <div class="type-name-inner"><span class="type-dot" style="background:${c}"></span>${t.Type}</div>
+        <div class="type-bar"><div class="type-bar-fill" style="width:${barPct}%;background:${c}"></div></div>
+      </td>
+      ${sBuList.map(b=>{
+        const raw = t.counts[b];
+        const v = parseInt(raw)||0;
+        const cls = v===0 || raw==='' ? ' zero' : '';
+        return `<td class="num${cls}" style="${heatBg(v,maxCell)}">${raw || '—'}</td>`;
+      }).join('')}
+      <td class="num grand">${t.counts[grandTotalLabel] || '—'}</td>
+    </tr>`;
+  }).join('');
 
   let totalRow = '';
   if(totals){
     totalRow = `<tr class="total-row">
-      <td>Grand Total</td>
-      ${sBuList.map(b=>`<td class="num">${totals[b] || ''}</td>`).join('')}
-      <td class="num grand">${totals[grandTotalLabel] || ''}</td>
+      <td class="type-name">Grand Total</td>
+      ${sBuList.map(b=>`<td class="num">${totals[b] || '—'}</td>`).join('')}
+      <td class="num grand">${totals[grandTotalLabel] || '—'}</td>
     </tr>`;
   }
 
   tbody.innerHTML = bodyRows + totalRow;
+
+  badge.style.display = 'flex';
+  badgeText.textContent = `${overallTotal} unit · ${types.length} tipe · ${sBuList.length} BU`;
 }
 
 connectBtn.addEventListener('click', ()=>{

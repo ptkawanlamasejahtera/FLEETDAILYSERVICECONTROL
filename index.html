@@ -63,6 +63,13 @@
   }
   .live-dot{width:7px;height:7px;border-radius:50%;background:var(--selesai);box-shadow:0 0 0 4px rgba(15,194,166,.18);animation:pulse 2s infinite;}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .auto-refresh-toggle{
+    display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-dim);font-weight:500;
+    border:1px solid var(--border);padding:8px 13px;border-radius:20px;background:var(--panel);
+    cursor:pointer;white-space:nowrap;user-select:none;
+  }
+  .auto-refresh-toggle input{accent-color:var(--violet-deep);width:14px;height:14px;cursor:pointer;}
+  .auto-refresh-toggle #autoRefreshCountdown{color:var(--text-faint);font-size:11px;}
 
   .wrap{max-width:1340px;margin:0 auto;padding:8px 32px 60px;}
 
@@ -100,14 +107,16 @@
     background:var(--panel);border:1px solid var(--border);border-radius:18px;
     box-shadow:0 4px 18px -10px rgba(30,20,80,.08);margin-bottom:22px;overflow:hidden;
   }
-  .kpis-grid{display:grid;grid-template-columns:repeat(6,1fr);}
-  .kpi-cell{padding:24px 14px;text-align:center;border-right:1px solid var(--border-soft);}
+  .kpis-grid{display:grid;grid-template-columns:repeat(7,1fr);}
+  .kpi-cell{padding:24px 12px;text-align:center;border-right:1px solid var(--border-soft);}
   .kpi-cell:last-child{border-right:none;}
   .kpi-cell .icon{width:34px;height:34px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;}
   .kpi-cell .icon svg{width:100%;height:100%;}
   .kpi-cell .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-faint);font-weight:700;margin-bottom:12px;}
   .kpi-cell .value{font-family:'Sora';font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:8px;}
   .kpi-cell .sub{font-size:12px;color:var(--text-dim);font-weight:500;}
+  .kpi-cell.assets{background:var(--panel-soft);}
+  .kpi-cell.assets .icon,.kpi-cell.assets .value{color:var(--violet-deep);}
   .kpi-cell.total .icon,.kpi-cell.total .value{color:var(--violet-deep);}
   .kpi-cell.delay .icon,.kpi-cell.delay .value{color:var(--delay);}
   .kpi-cell.antri .icon,.kpi-cell.antri .value{color:var(--amber);}
@@ -297,6 +306,10 @@
     <button class="reset-btn" id="compactBtn" style="white-space:nowrap;">&#128247; Mode Screenshot</button>
     <button class="reset-btn" id="connectBtn" style="white-space:nowrap;">Sambungkan</button>
     <button class="reset-btn" id="refreshBtn" style="white-space:nowrap;display:none;">&#8635; Refresh Data</button>
+    <label class="auto-refresh-toggle" id="autoRefreshWrap" style="display:none;">
+      <input type="checkbox" id="autoRefreshChk" checked>
+      <span>Auto-refresh <span id="autoRefreshCountdown" class="mono"></span></span>
+    </label>
     <div class="live-badge" id="liveBadge"><span class="live-dot" id="liveDot" style="background:#A0A4BD;"></span> <span id="liveText">Snapshot (belum tersambung)</span></div>
   </div>
 </div>
@@ -339,28 +352,14 @@
     <button class="reset-btn" id="resetBtn">Reset filter</button>
   </div>
 
-  <div class="panel" style="margin-bottom:22px;">
-    <div class="summary-head-row">
-      <div>
-        <h2>Total Fleet Assets</h2>
-        <p class="panel-sub" id="summarySub" style="margin-bottom:0;">Total keseluruhan unit armada per Type dan Business Unit — sheet "Summary Total Armada"</p>
-      </div>
-      <div class="summary-badge" id="summaryBadge" style="display:none;"><span class="dot"></span><span id="summaryBadgeText">0 unit · 0 tipe</span></div>
-    </div>
-    <div style="overflow-x:auto;margin-top:14px;">
-      <table id="summaryTable" style="width:100%;border-collapse:collapse;font-size:12.8px;">
-        <thead id="summaryThead"></thead>
-        <tbody id="summaryTbody"></tbody>
-      </table>
-      <div class="empty-state" id="summaryEmpty" style="display:none;padding:30px 20px;">
-        <div class="glyph">&#128202;</div>
-        Data Total Fleet Assets belum tersedia — sambungkan ke Apps Script dulu.
-      </div>
-    </div>
-  </div>
-
   <div class="kpis-panel">
     <div class="kpis-grid">
+      <div class="kpi-cell assets">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h13v13H1z"/><path d="M14 8h4l3 3v5h-7V8z"/><circle cx="6" cy="18.5" r="1.8"/><circle cx="17.5" cy="18.5" r="1.8"/></svg></div>
+        <div class="label">Total Fleet Assets</div>
+        <div class="value" id="kpiAssets">0</div>
+        <div class="sub" id="kpiAssetsSub">Semua Tipe Armada</div>
+      </div>
       <div class="kpi-cell total">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h13v13H1z"/><path d="M14 8h4l3 3v5h-7V8z"/><circle cx="6" cy="18.5" r="1.8"/><circle cx="17.5" cy="18.5" r="1.8"/></svg></div>
         <div class="label">Total Fleet Not Available</div>
@@ -400,9 +399,30 @@
     </div>
   </div>
 
+  <div class="panel" style="margin-bottom:22px;">
+    <div class="summary-head-row">
+      <div>
+        <h2>Total Fleet Assets per BU &amp; Tipe Armada</h2>
+        <p class="panel-sub" id="summarySub" style="margin-bottom:0;">Total keseluruhan unit armada per Type dan Business Unit — sheet "Summary Total Armada"</p>
+      </div>
+      <div class="summary-badge" id="summaryBadge" style="display:none;"><span class="dot"></span><span id="summaryBadgeText">0 unit · 0 tipe</span></div>
+    </div>
+    <div style="overflow-x:auto;margin-top:14px;">
+      <table id="summaryTable" style="width:100%;border-collapse:collapse;font-size:12.8px;">
+        <thead id="summaryThead"></thead>
+        <tbody id="summaryTbody"></tbody>
+      </table>
+      <div class="empty-state" id="summaryEmpty" style="display:none;padding:30px 20px;">
+        <div class="glyph">&#128202;</div>
+        Data Total Fleet Assets belum tersedia — sambungkan ke Apps Script dulu.
+      </div>
+    </div>
+  </div>
+
+
   <div class="panels">
     <div class="panel">
-      <h2>Total Armada per Kategori</h2>
+      <h2>Total Fleet Not Available per Kategori</h2>
       <p class="panel-sub" id="catSub">Jumlah unit per kategori service pada filter terpilih</p>
       <div class="chart-box"><canvas id="catChart"></canvas></div>
     </div>
@@ -414,10 +434,17 @@
     </div>
   </div>
 
-  <div class="panel" style="margin-bottom:22px;">
-    <h2>Total Fleet Not Available per BU (rentang tanggal terpilih)</h2>
-    <p class="panel-sub" id="buSub">Distribusi unit yang sedang service per Business Unit</p>
-    <div class="chart-box small"><canvas id="buChart"></canvas></div>
+  <div class="panels" style="margin-bottom:22px;">
+    <div class="panel" style="margin-bottom:0;">
+      <h2>Total Fleet Not Available per BU (rentang tanggal terpilih)</h2>
+      <p class="panel-sub" id="buSub">Distribusi unit yang sedang service per Business Unit</p>
+      <div class="chart-box small"><canvas id="buChart"></canvas></div>
+    </div>
+    <div class="panel" style="margin-bottom:0;">
+      <h2>Total Fleet Not Available per Type</h2>
+      <p class="panel-sub" id="typeSub">Distribusi unit yang sedang service per Tipe Armada</p>
+      <div class="chart-box small"><canvas id="typeChart"></canvas></div>
+    </div>
   </div>
 
   <div class="table-panel">
@@ -478,7 +505,7 @@ function statusClass(s){
 // ---- live data state ----
 let DATA = SNAPSHOT_DATA;
 let SUMMARY_ARMADA = null;
-let tanggalList = [], buList = [], katList = [], statusList = [];
+let tanggalList = [], buList = [], katList = [], statusList = [], typeList = [];
 
 function uniqSorted(arr){ return [...new Set(arr)].sort(); }
 const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,Mei:4,Jun:5,Jul:6,Agu:7,Sep:8,Okt:9,Nov:10,Des:11};
@@ -502,6 +529,7 @@ function rebuildFiltersAndRender(){
   buList = uniqSorted(DATA.map(r=>r.BU));
   katList = uniqSorted(DATA.map(r=>r.Kategori));
   statusList = uniqSorted(DATA.map(r=>r.Status));
+  typeList = uniqSorted(DATA.map(r=>r.Type));
 
   fTanggalFrom.innerHTML = tanggalList.map(t=>`<option value="${t}">${t}</option>`).join('');
   fTanggalTo.innerHTML = tanggalList.map(t=>`<option value="${t}">${t}</option>`).join('');
@@ -559,6 +587,8 @@ async function loadLiveData(url){
     const now = new Date();
     setLiveStatus('ok', `Live · update ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} · ${DATA.length} baris`);
     refreshBtn.style.display = 'inline-flex';
+    autoRefreshWrap.style.display = 'flex';
+    startAutoRefresh();
   }catch(err){
     console.error(err);
     setLiveStatus('error', 'Gagal konek (' + err.message + ') — pakai snapshot');
@@ -609,6 +639,8 @@ function renderSummaryArmada(){
     table.style.display = 'none';
     emptyState.style.display = 'block';
     badge.style.display = 'none';
+    animateValue(document.getElementById('kpiAssets'), 0);
+    document.getElementById('kpiAssetsSub').textContent = 'Belum tersambung';
     return;
   }
 
@@ -616,6 +648,8 @@ function renderSummaryArmada(){
     table.style.display = 'none';
     emptyState.style.display = 'block';
     badge.style.display = 'none';
+    animateValue(document.getElementById('kpiAssets'), 0);
+    document.getElementById('kpiAssetsSub').textContent = 'Belum tersambung';
     return;
   }
   table.style.display = '';
@@ -664,14 +698,71 @@ function renderSummaryArmada(){
 
   tbody.innerHTML = bodyRows + totalRow;
 
+  // hitung jumlah unik berdasarkan kata pertama label (mis. "HCI" & "HCI CDP" dianggap 1 BU yang sama,
+  // "KLS" & "KLS HO" juga 1 BU yang sama) — supaya badge mencerminkan jumlah BU/entitas sebenarnya,
+  // bukan sekadar jumlah baris pivot.
+  const uniqueBaseGroups = new Set(dataRows.map(row => row.label.trim().split(/\s+/)[0]));
+  const uniqueBaseCount = uniqueBaseGroups.size;
+
+  // tebak label sumbu kolom dari label sumbu baris (dua sumbu pivot selalu BU vs Type)
+  let columnAxisLabel = 'Kategori';
+  const rowAxisLower = rowAxisLabel.toLowerCase();
+  if(rowAxisLower === 'bu') columnAxisLabel = 'Type';
+  else if(rowAxisLower === 'type') columnAxisLabel = 'BU';
+
   badge.style.display = 'flex';
-  badgeText.textContent = `${overallTotal} unit · ${dataRows.length} ${rowAxisLabel.toLowerCase()} · ${columns.length} kolom`;
+  badgeText.textContent = `${overallTotal} unit · ${uniqueBaseCount} ${rowAxisLabel} · ${columns.length} ${columnAxisLabel}`;
+
+  animateValue(document.getElementById('kpiAssets'), overallTotal);
+  document.getElementById('kpiAssetsSub').textContent = `Semua Tipe Armada`;
 }
 
 connectBtn.addEventListener('click', ()=>{
   const url = gasUrlInput.value.trim();
   if(!url){ setLiveStatus('error', 'URL kosong'); return; }
   loadLiveData(url);
+});
+
+// ---- Auto Refresh ----
+const AUTO_REFRESH_MS = 3 * 60 * 1000; // 3 menit
+const autoRefreshWrap = document.getElementById('autoRefreshWrap');
+const autoRefreshChk = document.getElementById('autoRefreshChk');
+const autoRefreshCountdown = document.getElementById('autoRefreshCountdown');
+let autoRefreshTimer = null;
+let autoRefreshCountdownTimer = null;
+let autoRefreshSecondsLeft = 0;
+
+function stopAutoRefresh(){
+  if(autoRefreshTimer) clearInterval(autoRefreshTimer);
+  if(autoRefreshCountdownTimer) clearInterval(autoRefreshCountdownTimer);
+  autoRefreshTimer = null;
+  autoRefreshCountdownTimer = null;
+  autoRefreshCountdown.textContent = '';
+}
+
+function startAutoRefresh(){
+  stopAutoRefresh();
+  if(!autoRefreshChk.checked) return;
+  const url = gasUrlInput.value.trim();
+  if(!url) return;
+
+  autoRefreshSecondsLeft = AUTO_REFRESH_MS / 1000;
+  autoRefreshCountdown.textContent = `(${autoRefreshSecondsLeft}s)`;
+  autoRefreshCountdownTimer = setInterval(()=>{
+    autoRefreshSecondsLeft--;
+    if(autoRefreshSecondsLeft <= 0){ autoRefreshCountdown.textContent = ''; }
+    else{ autoRefreshCountdown.textContent = `(${autoRefreshSecondsLeft}s)`; }
+  }, 1000);
+
+  autoRefreshTimer = setInterval(()=>{
+    const u = gasUrlInput.value.trim();
+    if(u) loadLiveData(u);
+    autoRefreshSecondsLeft = AUTO_REFRESH_MS / 1000;
+  }, AUTO_REFRESH_MS);
+}
+
+autoRefreshChk.addEventListener('change', ()=>{
+  if(autoRefreshChk.checked) startAutoRefresh(); else stopAutoRefresh();
 });
 
 const compactBtn = document.getElementById('compactBtn');
@@ -695,7 +786,7 @@ refreshBtn.addEventListener('click', ()=>{
 });
 
 let sortKey = 'No', sortDir = 1;
-let catChart, statusChart, buChart;
+let catChart, statusChart, buChart, typeChart;
 
 function activeRange(){
   let from = fTanggalFrom.value, to = fTanggalTo.value;
@@ -843,6 +934,33 @@ function render(){
       scales:{
         x:{ ticks:{color:'#43465C', font:{size:11.5, weight:500}}, grid:{display:false} },
         y:{ beginAtZero:true, ticks:{color:'#A0A4BD', font:{size:11}, precision:0}, grid:{color:'#EFF0F9'} }
+      }
+    }
+  });
+
+  document.getElementById('typeSub').textContent = `Distribusi unit per Tipe Armada — ${rangeLabel}${fBU.value? ' · '+fBU.value:''}`;
+  const typeCounts = {};
+  typeList.forEach(t=>typeCounts[t]=0);
+  rows.forEach(r=>{ typeCounts[r.Type] = (typeCounts[r.Type]||0)+1; });
+  const typeEntries = typeList.map(t=>[t, typeCounts[t]]).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]);
+  const typeCtx = document.getElementById('typeChart');
+  if(typeChart) typeChart.destroy();
+  const typeGrad = typeCtx.getContext('2d').createLinearGradient(0,0,0,220);
+  typeGrad.addColorStop(0,'#7FE0D0'); typeGrad.addColorStop(1,'#0FC2A6');
+  typeChart = new Chart(typeCtx, {
+    type:'bar',
+    data:{
+      labels: typeEntries.map(e=>e[0]),
+      datasets:[{ data: typeEntries.map(e=>e[1]), backgroundColor:typeGrad, borderRadius:8, barThickness:26 }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{ backgroundColor:'#fff', borderColor:'#EAECF6', borderWidth:1, padding:10, titleColor:'#191B2E', bodyColor:'#191B2E' } },
+      scales:{
+        x:{ beginAtZero:true, ticks:{color:'#A0A4BD', font:{size:11}, precision:0}, grid:{color:'#EFF0F9'} },
+        y:{ ticks:{color:'#43465C', font:{size:11, weight:500}}, grid:{display:false} }
       }
     }
   });

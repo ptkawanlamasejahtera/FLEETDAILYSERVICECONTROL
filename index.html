@@ -95,23 +95,30 @@
   }
   .date-nav button:hover{border-color:var(--violet);color:var(--violet-deep);background:#F1EDFF;}
 
-  /* KPI strip */
-  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px;}
-  .kpi{
-    border-radius:18px;padding:19px 21px;position:relative;overflow:hidden;color:#fff;
-    box-shadow:0 10px 24px -12px rgba(30,20,80,.35);
+  /* KPI strip — flat style dengan icon */
+  .kpis-panel{
+    background:var(--panel);border:1px solid var(--border);border-radius:18px;
+    box-shadow:0 4px 18px -10px rgba(30,20,80,.08);margin-bottom:22px;overflow:hidden;
   }
-  .kpi .label{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:10px;opacity:.92;}
-  .kpi .value{font-family:'Sora';font-size:32px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;}
-  .kpi .sub{font-size:12px;margin-top:8px;opacity:.85;font-weight:500;}
-  .kpi.total{background:linear-gradient(135deg,var(--violet),var(--violet-deep));}
-  .kpi.delay{background:linear-gradient(135deg,#FF8A80,var(--delay));}
-  .kpi.selesai{background:linear-gradient(135deg,#4FE3C9,var(--selesai));}
-  .kpi.plan{background:linear-gradient(135deg,#7CB2FF,var(--blue));}
-  .kpi.reschedule{background:linear-gradient(135deg,#D3A2FF,var(--reschedule));}
-  .kpi::before{
-    content:'';position:absolute;width:110px;height:110px;border-radius:50%;
-    background:rgba(255,255,255,.14);top:-45px;right:-35px;
+  .kpis-grid{display:grid;grid-template-columns:repeat(6,1fr);}
+  .kpi-cell{padding:24px 14px;text-align:center;border-right:1px solid var(--border-soft);}
+  .kpi-cell:last-child{border-right:none;}
+  .kpi-cell .icon{width:34px;height:34px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;}
+  .kpi-cell .icon svg{width:100%;height:100%;}
+  .kpi-cell .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-faint);font-weight:700;margin-bottom:12px;}
+  .kpi-cell .value{font-family:'Sora';font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:8px;}
+  .kpi-cell .sub{font-size:12px;color:var(--text-dim);font-weight:500;}
+  .kpi-cell.total .icon,.kpi-cell.total .value{color:var(--violet-deep);}
+  .kpi-cell.delay .icon,.kpi-cell.delay .value{color:var(--delay);}
+  .kpi-cell.antri .icon,.kpi-cell.antri .value{color:var(--amber);}
+  .kpi-cell.proses .icon,.kpi-cell.proses .value{color:var(--pink);}
+  .kpi-cell.selesai .icon,.kpi-cell.selesai .value{color:var(--selesai);}
+  .kpi-cell.reschedule .icon,.kpi-cell.reschedule .value{color:var(--reschedule);}
+  @media (max-width:980px){
+    .kpis-grid{grid-template-columns:repeat(2,1fr);}
+    .kpi-cell{border-right:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft);}
+    .kpi-cell:nth-child(2n){border-right:none;}
+    .kpi-cell:last-child{border-bottom:none;}
   }
 
   /* panels row */
@@ -165,8 +172,24 @@
   .status-delay{background:#FFE3E6;color:#E1364F;}
   .status-selesai{background:#D7FAF2;color:#0A9A83;}
   .status-plan{background:#E0EBFF;color:#265FDB;}
+  .status-antri{background:#FFF1D6;color:#B4780A;}
+  .status-proses{background:#FDE0F1;color:#C42186;}
   .status-reschedule{background:#F3E4FF;color:#9333CE;}
   td.lama{font-family:'JetBrains Mono';color:var(--text-dim);white-space:nowrap;font-size:12px;}
+
+  #summaryTable thead th{
+    text-align:left;padding:9px 12px;color:var(--text-faint);font-weight:700;
+    text-transform:uppercase;letter-spacing:.045em;font-size:10.5px;border-bottom:2px solid var(--border);
+    white-space:nowrap;background:var(--panel-soft);
+  }
+  #summaryTable thead th.num{text-align:right;}
+  #summaryTable tbody td{padding:9px 12px;border-bottom:1px solid var(--border-soft);white-space:nowrap;}
+  #summaryTable tbody td.num{text-align:right;font-family:'JetBrains Mono';color:var(--text-dim);}
+  #summaryTable tbody td.type-name{font-weight:600;color:var(--text);}
+  #summaryTable tbody td.grand{font-weight:700;color:var(--violet-deep);}
+  #summaryTable tbody tr.total-row{background:var(--panel-soft);font-weight:700;}
+  #summaryTable tbody tr.total-row td{color:var(--text);border-top:2px solid var(--border);}
+  #summaryTable tbody tr.total-row td.grand{color:var(--violet-deep);}
 
   .empty-state{padding:50px 20px;text-align:center;color:var(--text-faint);}
   .empty-state .glyph{font-size:28px;margin-bottom:10px;}
@@ -239,31 +262,59 @@
     <button class="reset-btn" id="resetBtn">Reset filter</button>
   </div>
 
-  <div class="kpis">
-    <div class="kpi total">
-      <div class="label">Total Armada Not Available</div>
-      <div class="value" id="kpiTotal">0</div>
-      <div class="sub" id="kpiTotalSub">pada tanggal terpilih</div>
+  <div class="panel" style="margin-bottom:22px;">
+    <h2>Total Fleet Assets</h2>
+    <p class="panel-sub" id="summarySub">Total keseluruhan unit armada per Type dan Business Unit — sheet "Summary Total Armada"</p>
+    <div style="overflow-x:auto;">
+      <table id="summaryTable" style="width:100%;border-collapse:collapse;font-size:12.8px;">
+        <thead id="summaryThead"></thead>
+        <tbody id="summaryTbody"></tbody>
+      </table>
+      <div class="empty-state" id="summaryEmpty" style="display:none;padding:30px 20px;">
+        <div class="glyph">&#128202;</div>
+        Data Total Fleet Assets belum tersedia — sambungkan ke Apps Script dulu.
+      </div>
     </div>
-    <div class="kpi delay">
-      <div class="label">Delay</div>
-      <div class="value" id="kpiDelay">0</div>
-      <div class="sub" id="kpiDelaySub">— %</div>
-    </div>
-    <div class="kpi selesai">
-      <div class="label">Selesai</div>
-      <div class="value" id="kpiSelesai">0</div>
-      <div class="sub" id="kpiSelesaiSub">— %</div>
-    </div>
-    <div class="kpi plan">
-      <div class="label">Plan / Belum Masuk</div>
-      <div class="value" id="kpiPlan">0</div>
-      <div class="sub" id="kpiPlanSub">— %</div>
-    </div>
-    <div class="kpi reschedule">
-      <div class="label">Reschedule</div>
-      <div class="value" id="kpiResch">0</div>
-      <div class="sub" id="kpiReschSub">— %</div>
+  </div>
+
+  <div class="kpis-panel">
+    <div class="kpis-grid">
+      <div class="kpi-cell total">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h13v13H1z"/><path d="M14 8h4l3 3v5h-7V8z"/><circle cx="6" cy="18.5" r="1.8"/><circle cx="17.5" cy="18.5" r="1.8"/></svg></div>
+        <div class="label">Total Fleet Not Available</div>
+        <div class="value" id="kpiTotal">0</div>
+        <div class="sub" id="kpiTotalSub">pada tanggal terpilih</div>
+      </div>
+      <div class="kpi-cell delay">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 3"/></svg></div>
+        <div class="label">Delay</div>
+        <div class="value" id="kpiDelay">0</div>
+        <div class="sub" id="kpiDelaySub">— %</div>
+      </div>
+      <div class="kpi-cell antri">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12"/><path d="M6 22h12"/><path d="M6 2c0 5 6 6 6 10s-6 5-6 10"/><path d="M18 2c0 5-6 6-6 10s6 5 6 10"/></svg></div>
+        <div class="label">Antri</div>
+        <div class="value" id="kpiAntri">0</div>
+        <div class="sub" id="kpiAntriSub">— %</div>
+      </div>
+      <div class="kpi-cell proses">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.36"/><path d="M21 4v5h-5"/></svg></div>
+        <div class="label">Proses</div>
+        <div class="value" id="kpiProses">0</div>
+        <div class="sub" id="kpiProsesSub">— %</div>
+      </div>
+      <div class="kpi-cell selesai">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></div>
+        <div class="label">Selesai</div>
+        <div class="value" id="kpiSelesai">0</div>
+        <div class="sub" id="kpiSelesaiSub">— %</div>
+      </div>
+      <div class="kpi-cell reschedule">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4M16 2v4"/><circle cx="16" cy="15.5" r="3.2"/><path d="M16 14v1.6l1.1 1.1"/></svg></div>
+        <div class="label">Reschedule</div>
+        <div class="value" id="kpiResch">0</div>
+        <div class="sub" id="kpiReschSub">— %</div>
+      </div>
     </div>
   </div>
 
@@ -275,14 +326,14 @@
     </div>
     <div class="panel">
       <h2>Komposisi Status</h2>
-      <p class="panel-sub">Delay vs Selesai vs Plan vs Reschedule</p>
+      <p class="panel-sub">Delay vs Antri vs Proses vs Selesai vs Reschedule</p>
       <div class="chart-box small"><canvas id="statusChart"></canvas></div>
       <div class="cat-rows" id="statusRows"></div>
     </div>
   </div>
 
   <div class="panel" style="margin-bottom:22px;">
-    <h2>Total Armada per BU (rentang tanggal terpilih)</h2>
+    <h2>Total Fleet Not Available per BU (rentang tanggal terpilih)</h2>
     <p class="panel-sub" id="buSub">Distribusi unit yang sedang service per Business Unit</p>
     <div class="chart-box small"><canvas id="buChart"></canvas></div>
   </div>
@@ -335,15 +386,16 @@ const CAT_COLORS = {
   'Lainnya': '#FFB020'
 };
 const STATUS_COLORS = {
-  'Delay':'#FF5A6E', 'Selesai':'#0FC2A6', 'Plan':'#3D8BFF', 'Reschedule':'#B366F0'
+  'Delay':'#FF5A6E', 'Selesai':'#0FC2A6', 'Plan':'#3D8BFF', 'Queue (Antri)':'#FFB020', 'Proses':'#F5479C', 'Reschedule':'#B366F0'
 };
 function catColor(cat){ return CAT_COLORS[cat] || '#A0A4BD'; }
 function statusClass(s){
-  return { 'Delay':'status-delay','Selesai':'status-selesai','Plan':'status-plan','Reschedule':'status-reschedule' }[s] || '';
+  return { 'Delay':'status-delay','Selesai':'status-selesai','Plan':'status-plan','Queue (Antri)':'status-antri','Proses':'status-proses','Reschedule':'status-reschedule' }[s] || '';
 }
 
 // ---- live data state ----
 let DATA = SNAPSHOT_DATA;
+let SUMMARY_ARMADA = null;
 let tanggalList = [], buList = [], katList = [], statusList = [];
 
 function uniqSorted(arr){ return [...new Set(arr)].sort(); }
@@ -403,9 +455,25 @@ async function loadLiveData(url){
     if(!res.ok) throw new Error('HTTP '+res.status);
     const json = await res.json();
     if(json && json.error) throw new Error(json.error);
-    if(!Array.isArray(json) || json.length===0) throw new Error('Data kosong / format tidak sesuai');
-    DATA = json;
+
+    // format baru: { dailyService: [...], summaryArmada: {...} }
+    // fallback: format lama (array langsung) tetap didukung
+    let dailyRows, summary;
+    if(Array.isArray(json)){
+      dailyRows = json;
+      summary = null;
+    } else if(json && Array.isArray(json.dailyService)){
+      dailyRows = json.dailyService;
+      summary = json.summaryArmada || null;
+    } else {
+      throw new Error('Format data tidak sesuai');
+    }
+    if(dailyRows.length===0) throw new Error('Data kosong / format tidak sesuai');
+
+    DATA = dailyRows;
+    SUMMARY_ARMADA = summary;
     rebuildFiltersAndRender();
+    renderSummaryArmada();
     const now = new Date();
     setLiveStatus('ok', `Live · update ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} · ${DATA.length} baris`);
     refreshBtn.style.display = 'inline-flex';
@@ -413,8 +481,51 @@ async function loadLiveData(url){
     console.error(err);
     setLiveStatus('error', 'Gagal konek (' + err.message + ') — pakai snapshot');
     DATA = SNAPSHOT_DATA;
+    SUMMARY_ARMADA = null;
     rebuildFiltersAndRender();
+    renderSummaryArmada();
   }
+}
+
+function renderSummaryArmada(){
+  const thead = document.getElementById('summaryThead');
+  const tbody = document.getElementById('summaryTbody');
+  const emptyState = document.getElementById('summaryEmpty');
+  const table = document.getElementById('summaryTable');
+
+  if(!SUMMARY_ARMADA || !SUMMARY_ARMADA.types || SUMMARY_ARMADA.types.length===0){
+    table.style.display = 'none';
+    emptyState.style.display = 'block';
+    return;
+  }
+  table.style.display = '';
+  emptyState.style.display = 'none';
+
+  const { buList: sBuList, grandTotalLabel, types, totals } = SUMMARY_ARMADA;
+
+  thead.innerHTML = `<tr>
+    <th>Type</th>
+    ${sBuList.map(b=>`<th class="num">${b}</th>`).join('')}
+    <th class="num">${grandTotalLabel || 'Grand Total'}</th>
+  </tr>`;
+
+  const bodyRows = types.map(t=>`
+    <tr>
+      <td class="type-name">${t.Type}</td>
+      ${sBuList.map(b=>`<td class="num">${t.counts[b] || ''}</td>`).join('')}
+      <td class="num grand">${t.counts[grandTotalLabel] || ''}</td>
+    </tr>`).join('');
+
+  let totalRow = '';
+  if(totals){
+    totalRow = `<tr class="total-row">
+      <td>Grand Total</td>
+      ${sBuList.map(b=>`<td class="num">${totals[b] || ''}</td>`).join('')}
+      <td class="num grand">${totals[grandTotalLabel] || ''}</td>
+    </tr>`;
+  }
+
+  tbody.innerHTML = bodyRows + totalRow;
 }
 
 connectBtn.addEventListener('click', ()=>{
@@ -492,10 +603,13 @@ function render(){
 
   animateValue(document.getElementById('kpiDelay'), byStatus['Delay']||0);
   document.getElementById('kpiDelaySub').textContent = pct(byStatus['Delay']||0,total)+'% dari total';
+  const antriCount = (byStatus['Queue (Antri)']||0) + (byStatus['Plan']||0);
+  animateValue(document.getElementById('kpiAntri'), antriCount);
+  document.getElementById('kpiAntriSub').textContent = pct(antriCount,total)+'% dari total';
+  animateValue(document.getElementById('kpiProses'), byStatus['Proses']||0);
+  document.getElementById('kpiProsesSub').textContent = pct(byStatus['Proses']||0,total)+'% dari total';
   animateValue(document.getElementById('kpiSelesai'), byStatus['Selesai']||0);
   document.getElementById('kpiSelesaiSub').textContent = pct(byStatus['Selesai']||0,total)+'% dari total';
-  animateValue(document.getElementById('kpiPlan'), byStatus['Plan']||0);
-  document.getElementById('kpiPlanSub').textContent = pct(byStatus['Plan']||0,total)+'% dari total';
   animateValue(document.getElementById('kpiResch'), byStatus['Reschedule']||0);
   document.getElementById('kpiReschSub').textContent = pct(byStatus['Reschedule']||0,total)+'% dari total';
 
@@ -641,6 +755,7 @@ document.querySelectorAll('thead th').forEach(th=>{
 });
 
 rebuildFiltersAndRender();
+renderSummaryArmada();
 </script>
 </body>
 </html>

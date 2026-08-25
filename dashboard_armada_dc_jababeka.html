@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FLEET DAILY SERVICE CONTROL — Armada DC Jababeka</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#F4F5FB;
+    --panel:#FFFFFF;
+    --panel-soft:#F8F9FE;
+    --border:#EAECF6;
+    --border-soft:#F1F2FA;
+    --text:#191B2E;
+    --text-dim:#6C7189;
+    --text-faint:#A0A4BD;
+
+    --violet:#7C5CFC;
+    --violet-deep:#5B3DF0;
+    --coral:#FF6B6B;
+    --amber:#FFB020;
+    --teal:#0FC2A6;
+    --blue:#3D8BFF;
+    --pink:#F5479C;
+    --lime:#8BD450;
+
+    --delay:#FF5A6E;
+    --selesai:#0FC2A6;
+    --plan:#3D8BFF;
+    --reschedule:#B366F0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:
+    radial-gradient(1100px 480px at 8% -10%, #EDE7FF 0%, transparent 60%),
+    radial-gradient(900px 420px at 100% 0%, #E4FBF6 0%, transparent 55%),
+    var(--bg);
+    color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .display{font-family:'Sora',sans-serif;}
+
+  /* header */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:24px 32px;
+  }
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand-mark{
+    width:42px;height:42px;border-radius:13px;
+    background:linear-gradient(135deg,var(--violet),var(--pink));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Sora';font-weight:800;color:#fff;font-size:16px;
+    flex-shrink:0;box-shadow:0 8px 20px -6px rgba(124,92,252,.55);
+  }
+  .brand h1{font-family:'Sora';font-size:19px;font-weight:700;margin:0;letter-spacing:-.2px;color:var(--text);}
+  .brand p{margin:2px 0 0;font-size:12.5px;color:var(--text-dim);}
+  .live-badge{
+    display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-dim);font-weight:500;
+    border:1px solid var(--border);padding:8px 15px;border-radius:20px;background:var(--panel);
+    box-shadow:0 2px 8px -4px rgba(20,20,60,.08);
+  }
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--selesai);box-shadow:0 0 0 4px rgba(15,194,166,.18);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .wrap{max-width:1340px;margin:0 auto;padding:8px 32px 60px;}
+
+  /* filters */
+  .filters{
+    display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:22px;
+    background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:18px 22px;
+    box-shadow:0 4px 18px -10px rgba(30,20,80,.08);
+  }
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-faint);font-weight:700;}
+  select, input[type=text]{
+    background:var(--panel-soft);border:1.5px solid var(--border);color:var(--text);
+    padding:9px 13px;border-radius:10px;font-size:13.5px;font-family:'Inter';min-width:170px;font-weight:500;
+    outline:none;transition:.15s;
+  }
+  select:focus,input:focus{border-color:var(--violet);background:#fff;box-shadow:0 0 0 3px rgba(124,92,252,.12);}
+  .field.search input{min-width:230px;}
+  .reset-btn{
+    background:var(--panel-soft);border:1.5px solid var(--border);color:var(--text-dim);
+    padding:9px 17px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;
+  }
+  .reset-btn:hover{border-color:var(--violet);color:var(--violet-deep);background:#F1EDFF;}
+  .filter-spacer{flex:1;}
+  .date-nav{display:flex;gap:6px;}
+  .date-nav button{
+    height:37px;padding:0 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--panel-soft);
+    color:var(--text-dim);cursor:pointer;font-size:12.5px;display:flex;align-items:center;justify-content:center;font-weight:600;
+    transition:.15s;white-space:nowrap;
+  }
+  .date-nav button:hover{border-color:var(--violet);color:var(--violet-deep);background:#F1EDFF;}
+
+  /* KPI strip */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px;}
+  .kpi{
+    border-radius:18px;padding:19px 21px;position:relative;overflow:hidden;color:#fff;
+    box-shadow:0 10px 24px -12px rgba(30,20,80,.35);
+  }
+  .kpi .label{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:10px;opacity:.92;}
+  .kpi .value{font-family:'Sora';font-size:32px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;}
+  .kpi .sub{font-size:12px;margin-top:8px;opacity:.85;font-weight:500;}
+  .kpi.total{background:linear-gradient(135deg,var(--violet),var(--violet-deep));}
+  .kpi.delay{background:linear-gradient(135deg,#FF8A80,var(--delay));}
+  .kpi.selesai{background:linear-gradient(135deg,#4FE3C9,var(--selesai));}
+  .kpi.plan{background:linear-gradient(135deg,#7CB2FF,var(--blue));}
+  .kpi.reschedule{background:linear-gradient(135deg,#D3A2FF,var(--reschedule));}
+  .kpi::before{
+    content:'';position:absolute;width:110px;height:110px;border-radius:50%;
+    background:rgba(255,255,255,.14);top:-45px;right:-35px;
+  }
+
+  /* panels row */
+  .panels{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:22px;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:22px 24px;
+    box-shadow:0 4px 18px -10px rgba(30,20,80,.08);}
+  .panel h2{font-family:'Sora';font-size:15px;font-weight:700;margin:0 0 4px;color:var(--text);}
+  .panel .panel-sub{font-size:12.5px;color:var(--text-dim);margin:0 0 16px;}
+  .chart-box{position:relative;height:280px;}
+  .chart-box.small{height:220px;}
+
+  .cat-rows{display:flex;flex-direction:column;gap:9px;margin-top:14px;}
+  .cat-row{display:flex;align-items:center;gap:10px;font-size:12.5px;}
+  .cat-row .dot{width:10px;height:10px;border-radius:4px;flex-shrink:0;}
+  .cat-row .name{flex:1;color:var(--text-dim);font-weight:500;}
+  .cat-row .count{font-family:'JetBrains Mono';color:var(--text);font-weight:600;}
+
+  /* table */
+  .table-panel{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:24px;
+    box-shadow:0 4px 18px -10px rgba(30,20,80,.08);}
+  .table-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+  .table-head h2{font-family:'Sora';font-size:15px;font-weight:700;margin:0;color:var(--text);}
+  .table-count{font-size:12.5px;color:var(--text-dim);font-weight:500;
+    background:var(--panel-soft);padding:5px 12px;border-radius:20px;}
+  table{width:100%;border-collapse:collapse;font-size:12.8px;}
+  thead th{
+    text-align:left;padding:10px 10px;color:var(--text-faint);font-weight:700;
+    text-transform:uppercase;letter-spacing:.045em;font-size:10.5px;border-bottom:2px solid var(--border);
+    cursor:pointer;user-select:none;white-space:nowrap;position:sticky;top:0;background:var(--panel);
+  }
+  thead th:hover{color:var(--violet-deep);}
+  thead th .arrow{opacity:.6;margin-left:3px;color:var(--violet);}
+  tbody tr{border-bottom:1px solid var(--border-soft);transition:background .1s;}
+  tbody tr:hover{background:var(--panel-soft);}
+  tbody td{padding:11px 10px;vertical-align:top;}
+  td.kode{font-family:'JetBrains Mono';font-weight:700;color:var(--violet-deep);white-space:nowrap;}
+  td.nopol{font-family:'JetBrains Mono';color:var(--text-dim);white-space:nowrap;font-size:12px;}
+  td.detail{color:var(--text-dim);max-width:340px;line-height:1.45;}
+  td.bu{white-space:nowrap;}
+  .bu-chip{
+    display:inline-block;padding:3px 9px;border-radius:7px;font-size:11px;font-weight:700;
+    background:#EEF0FB;border:1px solid var(--border);color:var(--text-dim);
+  }
+  .cat-chip{
+    display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text);white-space:nowrap;font-weight:500;
+  }
+  .cat-chip .dot{width:8px;height:8px;border-radius:3px;flex-shrink:0;}
+  .status-chip{
+    display:inline-block;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;
+  }
+  .status-delay{background:#FFE3E6;color:#E1364F;}
+  .status-selesai{background:#D7FAF2;color:#0A9A83;}
+  .status-plan{background:#E0EBFF;color:#265FDB;}
+  .status-reschedule{background:#F3E4FF;color:#9333CE;}
+  td.lama{font-family:'JetBrains Mono';color:var(--text-dim);white-space:nowrap;font-size:12px;}
+
+  .empty-state{padding:50px 20px;text-align:center;color:var(--text-faint);}
+  .empty-state .glyph{font-size:28px;margin-bottom:10px;}
+
+  footer{text-align:center;padding:26px;color:var(--text-faint);font-size:11.5px;}
+
+  @media (max-width:980px){
+    .kpis{grid-template-columns:repeat(2,1fr);}
+    .panels{grid-template-columns:1fr;}
+    .wrap{padding:8px 16px 40px;}
+    td.detail{max-width:180px;}
+    .topbar{flex-direction:column;align-items:flex-start;gap:12px;}
+    #gasUrlInput{min-width:0 !important;width:100%;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">DC</div>
+    <div>
+      <h1>FLEET DAILY SERVICE CONTROL — Armada DC Jababeka</h1>
+      <p>Daily Service Log · per kategori &amp; BU</p>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <input type="text" id="gasUrlInput" placeholder="Tempel URL Apps Script (.../exec) di sini" value="https://script.google.com/macros/s/AKfycbw41oPEoWHSecaueq-cBa-kXohm5tJPqaK4fiy8FYf-VjeyVbEZ4JGQM5ycPebD_X7J/exec" style="min-width:280px;">
+    <button class="reset-btn" id="connectBtn" style="white-space:nowrap;">Sambungkan</button>
+    <button class="reset-btn" id="refreshBtn" style="white-space:nowrap;display:none;">&#8635; Refresh Data</button>
+    <div class="live-badge" id="liveBadge"><span class="live-dot" id="liveDot" style="background:#A0A4BD;"></span> <span id="liveText">Snapshot (belum tersambung)</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="filters">
+    <div class="field">
+      <label>Tanggal Dari</label>
+      <select id="fTanggalFrom"></select>
+    </div>
+    <div class="field">
+      <label>Tanggal Sampai</label>
+      <select id="fTanggalTo"></select>
+    </div>
+    <div class="field">
+      <label>&nbsp;</label>
+      <div class="date-nav">
+        <button id="quickToday" title="Hanya tanggal terbaru">Terbaru</button>
+        <button id="quickAll" title="Semua tanggal">Semua</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Business Unit</label>
+      <select id="fBU"></select>
+    </div>
+    <div class="field">
+      <label>Kategori</label>
+      <select id="fKategori"></select>
+    </div>
+    <div class="field">
+      <label>Status</label>
+      <select id="fStatus"></select>
+    </div>
+    <div class="field search">
+      <label>Cari (kode / nopol / detail)</label>
+      <input type="text" id="fSearch" placeholder="cth: A81, tail gate, oli mesin...">
+    </div>
+    <div class="filter-spacer"></div>
+    <button class="reset-btn" id="resetBtn">Reset filter</button>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi total">
+      <div class="label">Total Armada Not Available</div>
+      <div class="value" id="kpiTotal">0</div>
+      <div class="sub" id="kpiTotalSub">pada tanggal terpilih</div>
+    </div>
+    <div class="kpi delay">
+      <div class="label">Delay</div>
+      <div class="value" id="kpiDelay">0</div>
+      <div class="sub" id="kpiDelaySub">— %</div>
+    </div>
+    <div class="kpi selesai">
+      <div class="label">Selesai</div>
+      <div class="value" id="kpiSelesai">0</div>
+      <div class="sub" id="kpiSelesaiSub">— %</div>
+    </div>
+    <div class="kpi plan">
+      <div class="label">Plan / Belum Masuk</div>
+      <div class="value" id="kpiPlan">0</div>
+      <div class="sub" id="kpiPlanSub">— %</div>
+    </div>
+    <div class="kpi reschedule">
+      <div class="label">Reschedule</div>
+      <div class="value" id="kpiResch">0</div>
+      <div class="sub" id="kpiReschSub">— %</div>
+    </div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <h2>Total Armada per Kategori</h2>
+      <p class="panel-sub" id="catSub">Jumlah unit per kategori service pada filter terpilih</p>
+      <div class="chart-box"><canvas id="catChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Komposisi Status</h2>
+      <p class="panel-sub">Delay vs Selesai vs Plan vs Reschedule</p>
+      <div class="chart-box small"><canvas id="statusChart"></canvas></div>
+      <div class="cat-rows" id="statusRows"></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:22px;">
+    <h2>Total Armada per BU (rentang tanggal terpilih)</h2>
+    <p class="panel-sub" id="buSub">Distribusi unit yang sedang service per Business Unit</p>
+    <div class="chart-box small"><canvas id="buChart"></canvas></div>
+  </div>
+
+  <div class="table-panel">
+    <div class="table-head">
+      <h2>Detail Armada</h2>
+      <div class="table-count" id="tableCount">0 baris</div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th data-key="Tanggal">Tanggal<span class="arrow"></span></th>
+            <th data-key="Kode">Kode<span class="arrow"></span></th>
+            <th data-key="Nopol">Nopol<span class="arrow"></span></th>
+            <th data-key="Type">Type<span class="arrow"></span></th>
+            <th data-key="BU">BU<span class="arrow"></span></th>
+            <th data-key="Kategori">Kategori<span class="arrow"></span></th>
+            <th data-key="Detail">Detail</th>
+            <th data-key="Lama">Lama<span class="arrow"></span></th>
+            <th data-key="Status">Status<span class="arrow"></span></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <div class="glyph">&#128269;</div>
+        Tidak ada data yang cocok dengan filter ini.
+      </div>
+    </div>
+  </div>
+
+  <footer>Sumber: Google Sheets "4. Update Service Armada DC Jababeka 2026 Terupdate" — sheet Daily Service · snapshot beberapa tanggal (data lengkap terbatas oleh kapasitas ekspor).</footer>
+
+</div>
+
+<script>
+const SNAPSHOT_DATA = [{"Tanggal": "14 Agu 2026", "No": "1", "Kode": "A81", "Nopol": "A8963ZD", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Barcode BBM", "Detail": "BARCODE BBM BERMASALAH", "ArmadaPengganti": "MRP21 A8606WX", "KM": "318462", "NoBooking": "", "Plan": "", "TglMasuk": "4 Mei 2026", "TglSelesai": "", "Lama": "103 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "2", "Kode": "A118", "Nopol": "A8124ZH", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Asuransi", "Detail": "ASURANSI PASCA ACCIDENT DI TOL KARAWANG KLARI SSM B", "ArmadaPengganti": "MRP31 A8463ZW", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "19 Jun 2026", "TglSelesai": "", "Lama": "57 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "3", "Kode": "A7T", "Nopol": "B9070BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "PERSNELING SUSAH MASUK/KERAS", "ArmadaPengganti": "Tidak ada", "KM": "662848", "NoBooking": "BMR-202607-0047", "Plan": "", "TglMasuk": "2 Jul 2026", "TglSelesai": "", "Lama": "44 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "4", "Kode": "A10F", "Nopol": "A8284VD", "Type": "FUSO", "BU": "AHI", "Kategori": "Service Vendor Luar", "Detail": "PERBAIKAN BOX DI SALUYU BOGOR RT30430290 LANJUT PROSES REBRANDING DI SPORA PER TGL 12/08/26", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "24 Jul 2026", "TglSelesai": "", "Lama": "22 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "5", "Kode": "A3T", "Nopol": "B9061BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN + AC PANAS + TEMPAS CAS HP MATI  ( SO READY )  RADIATOR BOCOR,PRIMING PUMP", "ArmadaPengganti": "Tidak ada", "KM": "532928", "NoBooking": "BMR-202607-1429", "Plan": "", "TglMasuk": "3 Agu 2026", "TglSelesai": "", "Lama": "12 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "6", "Kode": "F02", "Nopol": "A8607WX", "Type": "CDE LONG CHASSIS", "BU": "FBI", "Kategori": "Service", "Detail": "CEK MESIN BUNYI KASAR (CEK OLI BERKURANG, AIR RADIATOR HABIS)", "ArmadaPengganti": "MRP12 A8087YX", "KM": "561334", "NoBooking": "BMR-202608-0093", "Plan": "", "TglMasuk": "3 Agu 2026", "TglSelesai": "", "Lama": "12 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "7", "Kode": "F01", "Nopol": "A8012ZV", "Type": "CDE LONG CHASSIS", "BU": "FBI", "Kategori": "Asuransi", "Detail": "KIRIM ASURANSI ASP", "ArmadaPengganti": "MRP01 A8358ZY", "KM": "-", "NoBooking": "DI MR", "Plan": "", "TglMasuk": "7 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "8 Hari", "Status": "Selesai"}, {"Tanggal": "14 Agu 2026", "No": "8", "Kode": "A173", "Nopol": "A8549VC", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service Vendor Luar", "Detail": "PASANG TAIL GATE DI VENDOR SALUYU RT30470487 DRIVER KARSITO", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "10 Agu 2026", "TglSelesai": "", "Lama": "5 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "9", "Kode": "I17TH", "Nopol": "B9011BEA", "Type": "TRACTOR HEAD", "BU": "HCI", "Kategori": "Service", "Detail": "CEK RADIATOR NAMBAH AIR 1 BOTOL, TANGKI BBM REMBES DELAY KONTRUKSI", "ArmadaPengganti": "Tidak ada", "KM": "964916", "NoBooking": "BMR-202608-0630", "Plan": "", "TglMasuk": "13 Agu 2026", "TglSelesai": "", "Lama": "2 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "10", "Kode": "A177", "Nopol": "A8283VD", "Type": "CDE LONG CHASSIS", "BU": "AHI", "Kategori": "Service Vendor Luar", "Detail": "SERVICE RUTIN GANTI OLI MESIN DI HINO HUDAYA CIBITUNG KM 10.000 RT30479097 DRIVER WAHYU LAKSONO", "ArmadaPengganti": "Tidak ada", "KM": "10592", "NoBooking": "BMR-202608-0627", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "14 Agu 2026", "No": "11", "Kode": "A107", "Nopol": "A8886ZF", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Konstruksi", "Detail": "PERBAIKAN BESI STOPER TAIL GATE RUSAK + PERBAIKAN SEAL AS HYDRAULIK BOCOR + FLEZER KEBAKAR (LAMPU SEIN MATI SEMUA)", "ArmadaPengganti": "Tidak ada", "KM": "264663", "NoBooking": "BMR-202608-0658 BMR-202608-0659", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "14 Agu 2026", "No": "12", "Kode": "A159", "Nopol": "A8232VC", "Type": "CDE LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "INDIKATOR ENGINE KUNING NYALA + LAMPU REM MATI", "ArmadaPengganti": "Tidak ada", "KM": "56511", "NoBooking": "BMR-202608-0660", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "14 Agu 2026", "No": "13", "Kode": "A5F", "Nopol": "A8146YX", "Type": "FUSO", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN + FINAL CHEK KIR + PASANG PART TANGKAI WIPPER + SOCKET BOHLAM H4 HALOGEN + PERBAIKAN TRIPLEK LANTAI BOX ( MOBIL GANTI BAN DULU DI VENDOR BAN)", "ArmadaPengganti": "Tidak ada", "KM": "662495", "NoBooking": "BMR-202608-0661 BMR-202608-0662", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "", "Lama": "1 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "14", "Kode": "A1T", "Nopol": "B9055BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN, COOLING SYSTEM, SVC REM ( SO READY )", "ArmadaPengganti": "Tidak ada", "KM": "630032", "NoBooking": "BMR-202608-0323", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "14 Agu 2026", "No": "15", "Kode": "A158", "Nopol": "A8151VC", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "FINAL CEK KIR", "ArmadaPengganti": "Tidak ada", "KM": "60461", "NoBooking": "BMR-202608-0669", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "14 Agu 2026", "No": "16", "Kode": "I114", "Nopol": "A8472VC", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Asuransi", "Detail": "ACCIDENT DI TOL JAKPEK ARMADA LANJUT KIRIM ASURANSI KMS", "ArmadaPengganti": "MRP22 A8049ZX", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "11 Jul 2026", "TglSelesai": "", "Lama": "35 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "17", "Kode": "I87", "Nopol": "A8557VB", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Asuransi", "Detail": "CHEK SEBELUM DI KIRIM KE BENGKEL ASURANSI ASP", "ArmadaPengganti": "MRP03 A8965ZY", "KM": "88439", "NoBooking": "BMR-202608-0181", "Plan": "", "TglMasuk": "5 Agu 2026", "TglSelesai": "", "Lama": "10 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "18", "Kode": "I37", "Nopol": "A8443ZY", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Asuransi", "Detail": "CEK PASCA INSIDEN DI SEREMPET I12TH DI DC LANJUT PROSES ASURANSI", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "13 Agu 2026", "TglSelesai": "", "Lama": "2 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "19", "Kode": "I34", "Nopol": "A8456XA", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Konstruksi", "Detail": "PERBAIKAN KABIN KEROPOS ARMADA MAU KIR TGL. 10/8/2026 + GANTI OLI MESIN", "ArmadaPengganti": "MRP20 A8615XA", "KM": "632874", "NoBooking": "BMR-202608-0302 BMR-202608-0303", "Plan": "", "TglMasuk": "7 Agu 2026", "TglSelesai": "", "Lama": "8 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "20", "Kode": "I112", "Nopol": "A8652XY", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Service Vendor Luar", "Detail": "GANTI BAN DI BUANA LIPPO AMBIL BAN DI MR + FINAL CEK KIR DRIVER KHAMDANI", "ArmadaPengganti": "Tidak ada", "KM": "679108", "NoBooking": "BMR-202608-0667", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "14 Agu 2026", "No": "21", "Kode": "I8T", "Nopol": "A8414VD", "Type": "WINGBOX", "BU": "HCI", "Kategori": "Service Vendor Luar", "Detail": "SERVICE RUTIN GANTI OLI MSIN DI HINO HUDAYA CIBITUNG KM 10.000 RT30480341 DRIVER ROFIK", "ArmadaPengganti": "Tidak ada", "KM": "10467", "NoBooking": "BMR-202608-0663", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "14 Agu 2026", "No": "22", "Kode": "I4TH", "Nopol": "A9991ZA", "Type": "TRACTOR HEAD", "BU": "HCI CDP", "Kategori": "Service", "Detail": "CHEK PRA UJI KIR MASA KIR HABIS TGL 05 .Sep. 2026", "ArmadaPengganti": "Tidak ada", "KM": "116223", "NoBooking": "BMR-202608-0664", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "14 Agu 2026", "No": "23", "Kode": "I128", "Nopol": "A8729ZF", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "LAMPU BOX DAN LAMPU REM MATI SEMUA", "ArmadaPengganti": "Tidak ada", "KM": "472608", "NoBooking": "BMR-202608-0666", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "14 Agu 2026", "No": "24", "Kode": "I71", "Nopol": "A8753XZ", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "GANTI OLI MESIN + CEK PRA UJI KIR MASA KIR HABIS TGL 13 .Aug. 2026 BLM MASUK MR JALAN RIT 2", "ArmadaPengganti": "Tidak ada", "KM": "500809", "NoBooking": "BMR-202608-0668", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "14 Agu 2026", "No": "25", "Kode": "I6T", "Nopol": "B9065BEN", "Type": "WINGBOX", "BU": "HCI", "Kategori": "KIR", "Detail": "UJI KIR MANDIRI CILINCING RT30479100 DRIVER SAMHANI", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "14 Agu 2026", "No": "26", "Kode": "K53", "Nopol": "A8717VB", "Type": "CDE LONG CHASSIS", "BU": "KLS HO", "Kategori": "Service", "Detail": "SERVICE MOTOR BLOWER AC TROUBLE", "ArmadaPengganti": "MRP09 B9710SCE", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "1 Jul 2026", "TglSelesai": "", "Lama": "45 Hari", "Status": "Delay"}, {"Tanggal": "14 Agu 2026", "No": "27", "Kode": "K23VB", "Nopol": "A8017VC", "Type": "MINI VAN BOX", "BU": "KLS", "Kategori": "KIR", "Detail": "UJI KIR MANDIRI DI BALARAJA RT30479104 DRIVER SAFIK", "ArmadaPengganti": "Tidak ada", "KM": "-", "NoBooking": "KIR-Tidak Ada", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "14 Agu 2026", "No": "28", "Kode": "K21VB", "Nopol": "A8553VB", "Type": "MINI VAN BOX", "BU": "KLS", "Kategori": "KIR", "Detail": "UJI KIR MANDIRI DI BALARAJA RT30479109 DRIVER IDRUS", "ArmadaPengganti": "Tidak ada", "KM": "-", "NoBooking": "KIR-Tidak Ada", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "14 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "1", "Kode": "A81", "Nopol": "A8963ZD", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Barcode BBM", "Detail": "BARCODE BBM BERMASALAH", "ArmadaPengganti": "MRP21 A8606WX", "KM": "318462", "NoBooking": "", "Plan": "", "TglMasuk": "4 Mei 2026", "TglSelesai": "", "Lama": "104 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "2", "Kode": "A118", "Nopol": "A8124ZH", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Asuransi", "Detail": "ASURANSI PASCA ACCIDENT DI TOL KARAWANG KLARI SSM B", "ArmadaPengganti": "MRP31 A8463ZW", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "19 Jun 2026", "TglSelesai": "", "Lama": "58 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "3", "Kode": "A7T", "Nopol": "B9070BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "PERSNELING SUSAH MASUK/KERAS", "ArmadaPengganti": "Tidak ada", "KM": "662848", "NoBooking": "BMR-202607-0047", "Plan": "", "TglMasuk": "2 Jul 2026", "TglSelesai": "", "Lama": "45 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "4", "Kode": "A10F", "Nopol": "A8284VD", "Type": "FUSO", "BU": "AHI", "Kategori": "Service Vendor Luar", "Detail": "PERBAIKAN BOX DI SALUYU BOGOR RT30430290 LANJUT PROSES REBRANDING DI SPORA PER TGL 12/08/26", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "24 Jul 2026", "TglSelesai": "", "Lama": "23 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "5", "Kode": "A3T", "Nopol": "B9061BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN + AC PANAS + TEMPAS CAS HP MATI  ( SO READY )  RADIATOR BOCOR,PRIMING PUMP", "ArmadaPengganti": "Tidak ada", "KM": "532928", "NoBooking": "BMR-202607-1429", "Plan": "", "TglMasuk": "3 Agu 2026", "TglSelesai": "", "Lama": "13 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "6", "Kode": "F02", "Nopol": "A8607WX", "Type": "CDE LONG CHASSIS", "BU": "FBI", "Kategori": "Service", "Detail": "CEK MESIN BUNYI KASAR (CEK OLI BERKURANG, AIR RADIATOR HABIS)", "ArmadaPengganti": "MRP12 A8087YX", "KM": "561334", "NoBooking": "BMR-202608-0093", "Plan": "", "TglMasuk": "3 Agu 2026", "TglSelesai": "", "Lama": "13 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "7", "Kode": "A173", "Nopol": "A8549VC", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service Vendor Luar", "Detail": "PASANG TAIL GATE DI VENDOR SALUYU RT30470487 DRIVER KARSITO", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "10 Agu 2026", "TglSelesai": "", "Lama": "6 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "8", "Kode": "I17TH", "Nopol": "B9011BEA", "Type": "TRACTOR HEAD", "BU": "HCI", "Kategori": "Service", "Detail": "CEK RADIATOR NAMBAH AIR 1 BOTOL, TANGKI BBM REMBES ORDER TANGKI", "ArmadaPengganti": "Tidak ada", "KM": "964916", "NoBooking": "BMR-202608-0630  BMR-202608-0754", "Plan": "", "TglMasuk": "13 Agu 2026", "TglSelesai": "", "Lama": "3 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "9", "Kode": "A5F", "Nopol": "A8146YX", "Type": "FUSO", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN + FINAL CHEK KIR + PASANG PART TANGKAI WIPPER + SOCKET BOHLAM H4 HALOGEN + PERBAIKAN TRIPLEK LANTAI BOX ( MOBIL GANTI BAN DULU DI VENDOR BAN)", "ArmadaPengganti": "Tidak ada", "KM": "662495", "NoBooking": "BMR-202608-0661 BMR-202608-0662", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "", "Lama": "2 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "10", "Kode": "A176", "Nopol": "A8509VC", "Type": "CDE LONG CHASSIS", "BU": "AHI", "Kategori": "Service Vendor Luar", "Detail": "SERVICE RUTIN GANTI OLI MESIN DI HINO HUDAYA CIBITUNG KM 40.000 RT30481197", "ArmadaPengganti": "Tidak ada", "KM": "38507", "NoBooking": "", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "11", "Kode": "A112", "Nopol": "A8657ZF", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN + AC MATI BLM MASUK MR JALAN RIT 2", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "15 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Reschedule"}, {"Tanggal": "15 Agu 2026", "No": "12", "Kode": "A124", "Nopol": "A8490ZH", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN + CAT TAIL GATE (RESCEDULE CAT TAIL GATE)", "ArmadaPengganti": "Tidak ada", "KM": "242177", "NoBooking": "BMR-202608-0728 BMR-202608-0729", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "13", "Kode": "A161", "Nopol": "A8236VC", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN", "ArmadaPengganti": "Tidak ada", "KM": "56977", "NoBooking": "BMR-202608-0731", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "14", "Kode": "A56", "Nopol": "A8452ZY", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "CEK PRA UJI KIR MASA KIR HABIS TGL 03 .Sep. 2026", "ArmadaPengganti": "Tidak ada", "KM": "588058", "NoBooking": "BMR-202608-0732", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "15", "Kode": "A84", "Nopol": "B9940SCF", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Konstruksi", "Detail": "PENGAIT PINTU BOX ATAS KANAN LEPAS", "ArmadaPengganti": "Tidak ada", "KM": "344626", "NoBooking": "BMR-202608-0733", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "16", "Kode": "A111", "Nopol": "A8123ZH", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "PASANG PART V-BELT ALT DUTRO 110", "ArmadaPengganti": "Tidak ada", "KM": "262392", "NoBooking": "BMR-202608-0734", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "17", "Kode": "F08", "Nopol": "A8710ZE", "Type": "CDE LONG CHASSIS", "BU": "FBI", "Kategori": "Konstruksi", "Detail": "CANTOLAN HENDEL PINTU BOK BELAKANG BAGIAN BAWAH BAUT MUR KENDOR DAN OBLAK", "ArmadaPengganti": "Tidak ada", "KM": "356120", "NoBooking": "BMR-202608-0735", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "18", "Kode": "A163", "Nopol": "A8268VC", "Type": "CDE PICK UP", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN", "ArmadaPengganti": "Tidak ada", "KM": "56548", "NoBooking": "BMR-202608-0736", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "19", "Kode": "A146", "Nopol": "A8104ZF", "Type": "CDE LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "PEDAL KOPLING TIDAK MAU BALIK + SAKLAR AC RUSAK", "ArmadaPengganti": "Tidak ada", "KM": "291430", "NoBooking": "BMR-202608-0737", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "20", "Kode": "A9T", "Nopol": "B9072BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN + CEK ARMADA AKAN DI LELANG ( ENGINE DAN KONTRUKSI )  MOBIL JALAN DULU TUNGGU SO", "ArmadaPengganti": "Tidak ada", "KM": "614199", "NoBooking": "BMR-202608-0738", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "", "Lama": "1 Hari", "Status": "Reschedule"}, {"Tanggal": "15 Agu 2026", "No": "21", "Kode": "A119", "Nopol": "A8491ZH", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "TIDAK BISA TRARTER", "ArmadaPengganti": "Tidak ada", "KM": "244586", "NoBooking": "BMR-202608-0747", "Plan": "", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "23", "Kode": "I114", "Nopol": "A8472VC", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Asuransi", "Detail": "ACCIDENT DI TOL JAKPEK ARMADA LANJUT KIRIM ASURANSI KMS", "ArmadaPengganti": "MRP22 A8049ZX", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "11 Jul 2026", "TglSelesai": "", "Lama": "36 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "24", "Kode": "I87", "Nopol": "A8557VB", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Asuransi", "Detail": "CHEK SEBELUM DI KIRIM KE BENGKEL ASURANSI ASP", "ArmadaPengganti": "MRP03 A8965ZY", "KM": "88439", "NoBooking": "BMR-202608-0181", "Plan": "", "TglMasuk": "5 Agu 2026", "TglSelesai": "", "Lama": "11 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "25", "Kode": "I37", "Nopol": "A8443ZY", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Asuransi", "Detail": "CEK PASCA INSIDEN DI SEREMPET I12TH DI DC LANJUT PROSES ASURANSI", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "13 Agu 2026", "TglSelesai": "", "Lama": "3 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "26", "Kode": "I34", "Nopol": "A8456XA", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Konstruksi", "Detail": "PERBAIKAN KABIN KEROPOS ARMADA MAU KIR TGL. 10/8/2026 + GANTI OLI MESIN", "ArmadaPengganti": "MRP20 A8615XA", "KM": "632874", "NoBooking": "BMR-202608-0302 BMR-202608-0303", "Plan": "", "TglMasuk": "7 Agu 2026", "TglSelesai": "", "Lama": "9 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "27", "Kode": "I112", "Nopol": "A8652XY", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Service Vendor Luar", "Detail": "GANTI BAN DI BUANA LIPPO CIKARANG BAN AMBIL DI MR No: RT30483271 DRIVER DEDE SARIFUDIN", "ArmadaPengganti": "Tidak ada", "KM": "-", "NoBooking": "SVL-Tidak Ada", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "28", "Kode": "I104", "Nopol": "A8152VC", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "GANTI OLI MESIN", "ArmadaPengganti": "Tidak ada", "KM": "67640", "NoBooking": "BMR-202608-0720", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "29", "Kode": "I109", "Nopol": "A8225VC", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "GANTI OLI MESIN", "ArmadaPengganti": "Tidak ada", "KM": "57484", "NoBooking": "BMR-202608-0721", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "30", "Kode": "I73", "Nopol": "B9943SCF", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "GANTI OLI MESIN DAN SVC REM", "ArmadaPengganti": "Tidak ada", "KM": "400623", "NoBooking": "BMR-202608-0722", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "31", "Kode": "I78", "Nopol": "A8517VB", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "PASANG PART FILTER SOLAR ATAS CANTER FE71 2022-2024", "ArmadaPengganti": "Tidak ada", "KM": "92242", "NoBooking": "BMR-202608-0723", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "32", "Kode": "I85", "Nopol": "A8559VB", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "TIDAK KUAT STATER + SENSOR ENGINE WARNA MERAH NYALA TERUS", "ArmadaPengganti": "Tidak ada", "KM": "88805", "NoBooking": "BMR-202608-0724", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "34", "Kode": "I8TH", "Nopol": "A9995ZA", "Type": "TRACTOR HEAD", "BU": "HCI CDP", "Kategori": "Service", "Detail": "GANTI OLI MESIN + JOK BAGIAN SANDARAN BESINYA PATAH (ARMADA JALAN DULU ORDER OLI PTT D3 PLUS SAE 40 SINGLE)", "ArmadaPengganti": "Tidak ada", "KM": "112925", "NoBooking": "BMR-202608-0726", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "35", "Kode": "K53", "Nopol": "A8717VB", "Type": "CDE LONG CHASSIS", "BU": "KLS HO", "Kategori": "Service", "Detail": "SERVICE MOTOR BLOWER AC TROUBLE", "ArmadaPengganti": "MRP09 B9710SCE", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "1 Jul 2026", "TglSelesai": "", "Lama": "46 Hari", "Status": "Delay"}, {"Tanggal": "15 Agu 2026", "No": "36", "Kode": "K61", "Nopol": "A8476VC", "Type": "CDE LONG CHASSIS", "BU": "KLS", "Kategori": "Service Vendor Luar", "Detail": "SERVICE RUTIN GANTI OLI MESIN DI HINO HUDAYA CIBITUNG KM 40.000 RT30481200 DRIVER DEDI RIZA", "ArmadaPengganti": "Tidak ada", "KM": "37654", "NoBooking": "SVL-Tidak Ada", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "37", "Kode": "K28VB", "Nopol": "A8237VD", "Type": "MINI VAN BOX", "BU": "KLS", "Kategori": "Service Vendor Luar", "Detail": "SERVICE RUTIN GANTI OLI MESIN DI SUZUKI LIPPO KM 10.000 RT30481209 DRIVER PURYANTO", "ArmadaPengganti": "Tidak ada", "KM": "10126", "NoBooking": "SVL-Tidak Ada", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "38", "Kode": "K20VB", "Nopol": "B9642SCE", "Type": "MINI VAN BOX", "BU": "KLS", "Kategori": "Service", "Detail": "GANTI OLI MESIN + AC PANAS", "ArmadaPengganti": "Tidak ada", "KM": "270246", "NoBooking": "BMR-202608-0717", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "39", "Kode": "K45", "Nopol": "A8432ZS", "Type": "CDE LONG CHASSIS", "BU": "KLS", "Kategori": "Service", "Detail": "CEK RODA DEPAN BUNYI + AC PANAS", "ArmadaPengganti": "Tidak ada", "KM": "202740", "NoBooking": "BMR-202608-0718", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "15 Agu 2026", "No": "40", "Kode": "K38", "Nopol": "A8098ZH", "Type": "CDE LONG CHASSIS", "BU": "KLS", "Kategori": "Service", "Detail": "PASANG PART V-BELT ALT DUTRO 110", "ArmadaPengganti": "Tidak ada", "KM": "299630", "NoBooking": "BMR-202608-0719", "Plan": "15 Agu 2026", "TglMasuk": "15 Agu 2026", "TglSelesai": "15 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "16 Agu 2026", "No": "1", "Kode": "A81", "Nopol": "A8963ZD", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Barcode BBM", "Detail": "BARCODE BBM BERMASALAH", "ArmadaPengganti": "MRP21 A8606WX", "KM": "318462", "NoBooking": "", "Plan": "", "TglMasuk": "4 Mei 2026", "TglSelesai": "", "Lama": "105 Hari", "Status": "Delay"}, {"Tanggal": "16 Agu 2026", "No": "2", "Kode": "A118", "Nopol": "A8124ZH", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Asuransi", "Detail": "ASURANSI PASCA ACCIDENT DI TOL KARAWANG KLARI SSM B", "ArmadaPengganti": "MRP31 A8463ZW", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "19 Jun 2026", "TglSelesai": "", "Lama": "59 Hari", "Status": "Delay"}, {"Tanggal": "16 Agu 2026", "No": "3", "Kode": "A7T", "Nopol": "B9070BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "PERSNELING SUSAH MASUK/KERAS", "ArmadaPengganti": "Tidak ada", "KM": "662848", "NoBooking": "BMR-202607-0047", "Plan": "", "TglMasuk": "2 Jul 2026", "TglSelesai": "", "Lama": "46 Hari", "Status": "Delay"}, {"Tanggal": "16 Agu 2026", "No": "4", "Kode": "A10F", "Nopol": "A8284VD", "Type": "FUSO", "BU": "AHI", "Kategori": "Service Vendor Luar", "Detail": "PERBAIKAN BOX DI SALUYU BOGOR RT30430290 LANJUT PROSES REBRANDING DI SPORA PER TGL 12/08/26", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "24 Jul 2026", "TglSelesai": "", "Lama": "24 Hari", "Status": "Delay"}, {"Tanggal": "16 Agu 2026", "No": "5", "Kode": "A3T", "Nopol": "B9061BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN + AC PANAS + TEMPAS CAS HP MATI  ( SO READY )  RADIATOR BOCOR,PRIMING PUMP", "ArmadaPengganti": "Tidak ada", "KM": "532928", "NoBooking": "BMR-202607-1429", "Plan": "", "TglMasuk": "3 Agu 2026", "TglSelesai": "", "Lama": "14 Hari", "Status": "Delay"}, {"Tanggal": "16 Agu 2026", "No": "6", "Kode": "F02", "Nopol": "A8607WX", "Type": "CDE LONG CHASSIS", "BU": "FBI", "Kategori": "Service", "Detail": "CEK MESIN BUNYI KASAR (CEK OLI BERKURANG, AIR RADIATOR HABIS)", "ArmadaPengganti": "MRP23 A8617XA", "KM": "561334", "NoBooking": "BMR-202608-0093", "Plan": "", "TglMasuk": "3 Agu 2026", "TglSelesai": "", "Lama": "14 Hari", "Status": "Delay"}, {"Tanggal": "16 Agu 2026", "No": "7", "Kode": "A173", "Nopol": "A8549VC", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service Vendor Luar", "Detail": "PASANG TAIL GATE DI VENDOR SALUYU RT30470487 DRIVER KARSITO", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "10 Agu 2026", "TglSelesai": "", "Lama": "7 Hari", "Status": "Delay"}, {"Tanggal": "16 Agu 2026", "No": "8", "Kode": "I17TH", "Nopol": "B9011BEA", "Type": "TRACTOR HEAD", "BU": "HCI", "Kategori": "Service", "Detail": "CEK RADIATOR NAMBAH AIR 1 BOTOL, TANGKI BBM REMBES", "ArmadaPengganti": "Tidak ada", "KM": "964916", "NoBooking": "BMR-202608-0630", "Plan": "", "TglMasuk": "13 Agu 2026", "TglSelesai": "", "Lama": "4 Hari", "Status": "Delay"}, {"Tanggal": "16 Agu 2026", "No": "9", "Kode": "A5F", "Nopol": "A8146YX", "Type": "FUSO", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN + FINAL CHEK KIR + PASANG PART TANGKAI WIPPER + SOCKET BOHLAM H4 HALOGEN + TANGKI BBM BOBOR + PERBAIKAN TRIPLEK LANTAI BOX (MOBIL JALAN DULU ORDER TRIPLEK)", "ArmadaPengganti": "Tidak ada", "KM": "662495", "NoBooking": "BMR-202608-0661 BMR-202608-0662", "Plan": "", "TglMasuk": "14 Agu 2026", "TglSelesai": "", "Lama": "3 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "1", "Kode": "A81", "Nopol": "A8963ZD", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Barcode BBM", "Detail": "BARCODE BBM BERMASALAH", "ArmadaPengganti": "MRP21 A8606WX", "KM": "318462", "NoBooking": "", "Plan": "", "TglMasuk": "4 Mei 2026", "TglSelesai": "", "Lama": "112 Hari", "Status": "Delay"}, {"Tanggal": "23 Agu 2026", "No": "2", "Kode": "A118", "Nopol": "A8124ZH", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Asuransi", "Detail": "ASURANSI PASCA ACCIDENT DI TOL KARAWANG KLARI SSM B", "ArmadaPengganti": "MRP31 A8463ZW", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "19 Jun 2026", "TglSelesai": "", "Lama": "66 Hari", "Status": "Delay"}, {"Tanggal": "23 Agu 2026", "No": "3", "Kode": "A7T", "Nopol": "B9070BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "PERSNELING SUSAH MASUK/KERAS", "ArmadaPengganti": "Tidak ada", "KM": "662848", "NoBooking": "BMR-202607-0047", "Plan": "", "TglMasuk": "2 Jul 2026", "TglSelesai": "", "Lama": "53 Hari", "Status": "Delay"}, {"Tanggal": "23 Agu 2026", "No": "4", "Kode": "A3T", "Nopol": "B9061BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN + AC PANAS + TEMPAS CAS HP MATI (SO READY) RADIATOR BOCOR PRIMING PUMP", "ArmadaPengganti": "Tidak ada", "KM": "532928", "NoBooking": "BMR-202607-1429", "Plan": "", "TglMasuk": "3 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "21 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "5", "Kode": "F02", "Nopol": "A8607WX", "Type": "CDE LONG CHASSIS", "BU": "FBI", "Kategori": "Service", "Detail": "CEK MESIN BUNYI KASAR (CEK OLI BERKURANG AIR RADIATOR HABIS)", "ArmadaPengganti": "Tidak ada", "KM": "561334", "NoBooking": "BMR-202608-0093", "Plan": "", "TglMasuk": "3 Agu 2026", "TglSelesai": "", "Lama": "21 Hari", "Status": "Delay"}, {"Tanggal": "23 Agu 2026", "No": "6", "Kode": "A6F", "Nopol": "A8186YX", "Type": "FUSO", "BU": "AHI", "Kategori": "Service", "Detail": "FINAL CEK KIR + KOPLING DALEM GIGI PERSNELING KERAS", "ArmadaPengganti": "Tidak ada", "KM": "716751", "NoBooking": "BMR-202608-0931", "Plan": "20 Agu 2026", "TglMasuk": "20 Agu 2026", "TglSelesai": "", "Lama": "4 Hari", "Status": "Delay"}, {"Tanggal": "23 Agu 2026", "No": "7", "Kode": "A9F", "Nopol": "A8313YX", "Type": "FUSO", "BU": "AHI", "Kategori": "Service", "Detail": "SERVICE REM + FINAL CEK KIR + PENGAJUAN BAN LUAR", "ArmadaPengganti": "Tidak ada", "KM": "701982", "NoBooking": "BMR-202608-0989", "Plan": "21 Agu 2026", "TglMasuk": "21 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "3 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "8", "Kode": "A54", "Nopol": "A8446ZY", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "FINAL CEK KIR + GANTI BAN DI MR LANJUT SETEMPEL BAN DI BUANA LIPOO CIKARANG DELAY KONSTRUKSI KABIN KEROPOS", "ArmadaPengganti": "MRP20 A8615XA", "KM": "625160", "NoBooking": "BMR-202608-1050", "Plan": "22 Agu 2026", "TglMasuk": "22 Agu 2026", "TglSelesai": "", "Lama": "2 Hari", "Status": "Delay"}, {"Tanggal": "23 Agu 2026", "No": "9", "Kode": "A112", "Nopol": "A8657ZF", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "PASANG PART MOTOR FAN + CAT TAIL GATE", "ArmadaPengganti": "Tidak ada", "KM": "252011", "NoBooking": "BMR-202608-1091", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "10", "Kode": "A105", "Nopol": "A8656ZF", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN + CHEK AC PANAS", "ArmadaPengganti": "Tidak ada", "KM": "260054", "NoBooking": "BMR-202608-1098", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "11", "Kode": "A119", "Nopol": "A8491ZH", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Konstruksi", "Detail": "PERBAIKAN PLAT REBRANDING LEPAS", "ArmadaPengganti": "Tidak ada", "KM": "245258", "NoBooking": "BMR-202608-1078", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "12", "Kode": "A88", "Nopol": "A8571ZE", "Type": "CDE LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "PASANG PART MUR BAUT RODA RR RH DAN KARET STOPPER + GANTI OLI MESIN", "ArmadaPengganti": "Tidak ada", "KM": "339107", "NoBooking": "BMR-202608-1089", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "13", "Kode": "A167", "Nopol": "A8078ZH", "Type": "CDE LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "TAILGATE MATI TIDAK BISA TURUN", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "", "Lama": "1 Hari", "Status": "Delay"}, {"Tanggal": "23 Agu 2026", "No": "14", "Kode": "A09", "Nopol": "A8373WX", "Type": "CDE", "BU": "AHI", "Kategori": "Service", "Detail": "PASANG PART SHOCK BREAKER + KARET STOPPER + SELANG INTERCOOLER PANJANG DAN PENDEK + PERBAIKAN PEDAL KOPLING", "ArmadaPengganti": "Tidak ada", "KM": "624881", "NoBooking": "BMR-202608-1075", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "15", "Kode": "A114", "Nopol": "A8147ZH", "Type": "CDE LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN + SERVICE REM", "ArmadaPengganti": "Tidak ada", "KM": "253313", "NoBooking": "BMR-202608-1076", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "16", "Kode": "F5VB", "Nopol": "A8541ZE", "Type": "MINI VAN BOX", "BU": "FBI", "Kategori": "Service", "Detail": "PASANG PART LONG TIE RODP/S G.MAX", "ArmadaPengganti": "Tidak ada", "KM": "256292", "NoBooking": "BMR-202608-1077", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "17", "Kode": "A9T", "Nopol": "B9072BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "GANTI OLI MESIN SO READY", "ArmadaPengganti": "Tidak ada", "KM": "614395", "NoBooking": "", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "18", "Kode": "I17TH", "Nopol": "B9011BEA", "Type": "TRACTOR HEAD", "BU": "HCI", "Kategori": "Service", "Detail": "CEK RADIATOR NAMBAH AIR 1 BOTOL TANGKI BBM REMBES", "ArmadaPengganti": "Tidak ada", "KM": "964916", "NoBooking": "BMR-202608-0630", "Plan": "", "TglMasuk": "13 Agu 2026", "TglSelesai": "", "Lama": "11 Hari", "Status": "Delay"}, {"Tanggal": "23 Agu 2026", "No": "19", "Kode": "I114", "Nopol": "A8472VC", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Asuransi", "Detail": "ACCIDENT DI TOL JAKPEK ARMADA LANJUT KIRIM ASURANSI KMS", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "MRP22 A8049ZX", "Plan": "", "TglMasuk": "11 Jul 2026", "TglSelesai": "", "Lama": "44 Hari", "Status": "Delay"}, {"Tanggal": "23 Agu 2026", "No": "20", "Kode": "I37", "Nopol": "A8443ZY", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Asuransi", "Detail": "CEK PASCA INSIDEN DI SEREMPET I12TH DI DC LANJUT PROSES ASURANSI", "ArmadaPengganti": "MRP27 A8801ZF", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "13 Agu 2026", "TglSelesai": "", "Lama": "11 Hari", "Status": "Delay"}, {"Tanggal": "23 Agu 2026", "No": "21", "Kode": "I34", "Nopol": "A8456XA", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Konstruksi", "Detail": "PERBAIKAN KABIN KEROPOS ARMADA MAU KIR TGL 10/8/2026 + GANTI OLI MESIN", "ArmadaPengganti": "Tidak ada", "KM": "632874", "NoBooking": "BMR-202608-0302/0303", "Plan": "20 Agu 2026", "TglMasuk": "7 Agu 2026", "TglSelesai": "", "Lama": "17 Hari", "Status": "Delay"}, {"Tanggal": "23 Agu 2026", "No": "22", "Kode": "MR13", "Nopol": "BB03F2101265", "Type": "LANDING CHASSIS", "BU": "HCI CDP", "Kategori": "Konstruksi", "Detail": "KAKI GAJAH TIDAK MAU NAIK", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "20 Agu 2026", "TglMasuk": "21 Agu 2026", "TglSelesai": "", "Lama": "3 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "23", "Kode": "I32", "Nopol": "A8465VA", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "PASANG PART LINK WIPPER + PEDAL GAS", "ArmadaPengganti": "Tidak ada", "KM": "589371", "NoBooking": "BMR-202608-1079", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "24", "Kode": "I84", "Nopol": "A8556VB", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "LAMPU BOX DEPAN MATI", "ArmadaPengganti": "Tidak ada", "KM": "93696", "NoBooking": "BMR-202608-1087", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "25", "Kode": "I81", "Nopol": "A8520VB", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "GANTI OLI MESIN", "ArmadaPengganti": "Tidak ada", "KM": "100033", "NoBooking": "BMR-202608-1080", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "26", "Kode": "I90", "Nopol": "A8561VB", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "GANTI OLI MESIN", "ArmadaPengganti": "Tidak ada", "KM": "86171", "NoBooking": "BMR-202608-1081", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "27", "Kode": "I50", "Nopol": "A8737ZE", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "GANTI OLI MESIN", "ArmadaPengganti": "Tidak ada", "KM": "422813", "NoBooking": "BMR-202608-1082", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "28", "Kode": "I14TH", "Nopol": "A8062VB", "Type": "TRACTOR HEAD", "BU": "HCI", "Kategori": "Service", "Detail": "FINAL CEK KIR + PASANG PART FILTER UDARA", "ArmadaPengganti": "Tidak ada", "KM": "170335", "NoBooking": "BMR-202608-1090", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "29", "Kode": "I5TH", "Nopol": "A9992ZA", "Type": "TRACTOR HEAD", "BU": "HCI CDP", "Kategori": "Service", "Detail": "FINAL CEK KIR + PASANG PART TABUNG MINYAK POWER STEERING", "ArmadaPengganti": "Tidak ada", "KM": "117723", "NoBooking": "BMR-202608-1086", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "23 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "23 Agu 2026", "No": "30", "Kode": "I4F", "Nopol": "A8935VA", "Type": "FUSO", "BU": "HCI", "Kategori": "Konstruksi", "Detail": "HANDLE PINTU BOX KIRI LEPAS DIPAKAI JALAN LANGSIRAN", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "23 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Reschedule"}, {"Tanggal": "23 Agu 2026", "No": "31", "Kode": "K5VB", "Nopol": "A8876ZX", "Type": "MINI VAN BOX", "BU": "KLS", "Kategori": "Service", "Detail": "GANTI OLI MESIN + FINAL KIR + KEBOCORAN OLI MESIN + SENSOR ENGINE NYALA + KABIN KEROPOS", "ArmadaPengganti": "Tidak ada", "KM": "439316", "NoBooking": "BMR-202608-1059", "Plan": "22 Agu 2026", "TglMasuk": "22 Agu 2026", "TglSelesai": "", "Lama": "2 Hari", "Status": "Delay"}, {"Tanggal": "24 Agu 2026", "No": "1", "Kode": "A81", "Nopol": "A8963ZD", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Barcode BBM", "Detail": "BARCODE BBM BERMASALAH", "ArmadaPengganti": "MRP21 A8606WX", "KM": "318462", "NoBooking": "", "Plan": "", "TglMasuk": "4 Mei 2026", "TglSelesai": "", "Lama": "113 Hari", "Status": "Delay"}, {"Tanggal": "24 Agu 2026", "No": "2", "Kode": "A118", "Nopol": "A8124ZH", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Asuransi", "Detail": "ASURANSI PASCA ACCIDENT DI TOL KARAWANG KLARI SSM B", "ArmadaPengganti": "MRP31 A8463ZW", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "19 Jun 2026", "TglSelesai": "", "Lama": "67 Hari", "Status": "Delay"}, {"Tanggal": "24 Agu 2026", "No": "3", "Kode": "A7T", "Nopol": "B9070BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "PERSNELING SUSAH MASUK/KERAS", "ArmadaPengganti": "Tidak ada", "KM": "662848", "NoBooking": "BMR-202607-0047", "Plan": "", "TglMasuk": "2 Jul 2026", "TglSelesai": "", "Lama": "54 Hari", "Status": "Delay"}, {"Tanggal": "24 Agu 2026", "No": "4", "Kode": "F02", "Nopol": "A8607WX", "Type": "CDE LONG CHASSIS", "BU": "FBI", "Kategori": "Service", "Detail": "CEK MESIN BUNYI KASAR (CEK OLI BERKURANG AIR RADIATOR HABIS)", "ArmadaPengganti": "MRP23 A8617XA", "KM": "561334", "NoBooking": "BMR-202608-0093", "Plan": "", "TglMasuk": "3 Agu 2026", "TglSelesai": "", "Lama": "22 Hari", "Status": "Delay"}, {"Tanggal": "24 Agu 2026", "No": "5", "Kode": "A6F", "Nopol": "A8186YX", "Type": "FUSO", "BU": "AHI", "Kategori": "Service", "Detail": "FINAL CEK KIR + KOPLING DALEM GIGI PERSNELING KERAS", "ArmadaPengganti": "Tidak ada", "KM": "716751", "NoBooking": "BMR-202608-0931", "Plan": "20 Agu 2026", "TglMasuk": "20 Agu 2026", "TglSelesai": "", "Lama": "5 Hari", "Status": "Delay"}, {"Tanggal": "24 Agu 2026", "No": "6", "Kode": "A54", "Nopol": "A8446ZY", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "FINAL CEK KIR + GANTI BAN LANJUT SETEMPEL BAN DI BUANA LIPOO CIKARANG DELAY KONSTRUKSI KABIN KEROPOS", "ArmadaPengganti": "MRP20 A8615XA", "KM": "625160", "NoBooking": "BMR-202608-1050", "Plan": "22 Agu 2026", "TglMasuk": "22 Agu 2026", "TglSelesai": "", "Lama": "3 Hari", "Status": "Delay"}, {"Tanggal": "24 Agu 2026", "No": "7", "Kode": "A167", "Nopol": "A8078ZH", "Type": "CDE LONG CHASSIS", "BU": "AHI", "Kategori": "Service Center", "Detail": "TAIL GATE TIDAK BERFUNGSI (TIDAK BISA NAIK TURUN) PERBAIKAN OLEH TEAM SERVICE CENTER", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "MOBIL DI AREA STEAM", "Plan": "23 Agu 2026", "TglMasuk": "23 Agu 2026", "TglSelesai": "24 Agu 2026", "Lama": "2 Hari", "Status": "Selesai"}, {"Tanggal": "24 Agu 2026", "No": "8", "Kode": "A117", "Nopol": "A8125ZH", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "PASANG PART SEAL KREG AS RR DUTRO 130", "ArmadaPengganti": "Tidak ada", "KM": "246778", "NoBooking": "BMR-202608-1103", "Plan": "24 Agu 2026", "TglMasuk": "24 Agu 2026", "TglSelesai": "24 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "24 Agu 2026", "No": "9", "Kode": "A92", "Nopol": "A8736ZE", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Konstruksi", "Detail": "CAT TAIL GATE + KLAKSON MATI", "ArmadaPengganti": "Tidak ada", "KM": "298261", "NoBooking": "BMR-202608-1104/1105", "Plan": "24 Agu 2026", "TglMasuk": "24 Agu 2026", "TglSelesai": "24 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "24 Agu 2026", "No": "10", "Kode": "A168", "Nopol": "A8873ZF", "Type": "CDE LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "AC MATI", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "24 Agu 2026", "TglMasuk": "24 Agu 2026", "TglSelesai": "24 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "24 Agu 2026", "No": "11", "Kode": "A49", "Nopol": "A8507XY", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Konstruksi", "Detail": "BEMPER BELAKANG LASAN LEPAS", "ArmadaPengganti": "Tidak ada", "KM": "657470", "NoBooking": "BMR-202608-1144", "Plan": "24 Agu 2026", "TglMasuk": "24 Agu 2026", "TglSelesai": "24 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "24 Agu 2026", "No": "12", "Kode": "A163", "Nopol": "A8268VC", "Type": "CDE PICK UP", "BU": "AHI", "Kategori": "Service", "Detail": "AC PANAS (DINGIN DI AWAL)", "ArmadaPengganti": "Tidak ada", "KM": "57484", "NoBooking": "BMR-202608-1149", "Plan": "24 Agu 2026", "TglMasuk": "24 Agu 2026", "TglSelesai": "24 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "24 Agu 2026", "No": "13", "Kode": "A10F", "Nopol": "A8284VD", "Type": "FUSO", "BU": "AHI", "Kategori": "Service", "Detail": "LAMPU BOX MATI SEMUA", "ArmadaPengganti": "Tidak ada", "KM": "8670", "NoBooking": "BMR-202608-1154", "Plan": "24 Agu 2026", "TglMasuk": "24 Agu 2026", "TglSelesai": "24 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "24 Agu 2026", "No": "14", "Kode": "A121", "Nopol": "A8489ZH", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "LAMPU BOX MATI SEMUA", "ArmadaPengganti": "Tidak ada", "KM": "233810", "NoBooking": "BMR-202608-1159", "Plan": "24 Agu 2026", "TglMasuk": "24 Agu 2026", "TglSelesai": "24 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "24 Agu 2026", "No": "1", "Kode": "I17TH", "Nopol": "B9011BEA", "Type": "TRACTOR HEAD", "BU": "HCI", "Kategori": "Service", "Detail": "CEK RADIATOR NAMBAH AIR 1 BOTOL TANGKI BBM REMBES", "ArmadaPengganti": "Tidak ada", "KM": "964916", "NoBooking": "BMR-202608-0630", "Plan": "", "TglMasuk": "13 Agu 2026", "TglSelesai": "", "Lama": "12 Hari", "Status": "Delay"}, {"Tanggal": "24 Agu 2026", "No": "2", "Kode": "I114", "Nopol": "A8472VC", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Asuransi", "Detail": "ACCIDENT DI TOL JAKPEK ARMADA LANJUT KIRIM ASURANSI KMS", "ArmadaPengganti": "MRP22 A8049ZX", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "11 Jul 2026", "TglSelesai": "", "Lama": "45 Hari", "Status": "Delay"}, {"Tanggal": "24 Agu 2026", "No": "3", "Kode": "I37", "Nopol": "A8443ZY", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Asuransi", "Detail": "CEK PASCA INSIDEN DI SEREMPET I12TH DI DC LANJUT PROSES ASURANSI", "ArmadaPengganti": "MRP27 A8801ZF", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "13 Agu 2026", "TglSelesai": "", "Lama": "12 Hari", "Status": "Delay"}, {"Tanggal": "24 Agu 2026", "No": "4", "Kode": "I31", "Nopol": "A8536XA", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "PASANG PART KING PIN DAN BUSHING KING PIN DUTRO + TIDAK BISA STATER", "ArmadaPengganti": "Tidak ada", "KM": "618887", "NoBooking": "BMR-202608-1106", "Plan": "24 Agu 2026", "TglMasuk": "24 Agu 2026", "TglSelesai": "24 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "24 Agu 2026", "No": "5", "Kode": "I11TH", "Nopol": "A8041ZS", "Type": "TRACTOR HEAD", "BU": "HCI CDP", "Kategori": "Service", "Detail": "PASANG PART BOOSTER KOPLING BAWAH ISUZU GVR34", "ArmadaPengganti": "Tidak ada", "KM": "100160", "NoBooking": "BMR-202608-1107", "Plan": "24 Agu 2026", "TglMasuk": "24 Agu 2026", "TglSelesai": "24 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "24 Agu 2026", "No": "6", "Kode": "I4F", "Nopol": "A8935VA", "Type": "FUSO", "BU": "HCI", "Kategori": "Konstruksi", "Detail": "HANDLE PINTU BOX KIRI LEPAS", "ArmadaPengganti": "Tidak ada", "KM": "875611", "NoBooking": "BMR-202608-1108", "Plan": "24 Agu 2026", "TglMasuk": "24 Agu 2026", "TglSelesai": "24 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "24 Agu 2026", "No": "7", "Kode": "I6F", "Nopol": "A8665VA", "Type": "FUSO", "BU": "HCI", "Kategori": "Service", "Detail": "MINYAK REM BOCOR DARI TABUNG DEPAN", "ArmadaPengganti": "Tidak ada", "KM": "751775", "NoBooking": "BMR-202608-1110", "Plan": "24 Agu 2026", "TglMasuk": "24 Agu 2026", "TglSelesai": "24 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "24 Agu 2026", "No": "8", "Kode": "I15TH", "Nopol": "A8063VB", "Type": "TRACTOR HEAD", "BU": "HCI", "Kategori": "Service", "Detail": "GENERAL CHEK ARMADA AKAN JALAN KE SIDOARJO", "ArmadaPengganti": "Tidak ada", "KM": "173015", "NoBooking": "BMR-202608-1150", "Plan": "24 Agu 2026", "TglMasuk": "24 Agu 2026", "TglSelesai": "24 Agu 2026", "Lama": "1 Hari", "Status": "Selesai"}, {"Tanggal": "24 Agu 2026", "No": "9", "Kode": "K5VB", "Nopol": "A8876ZX", "Type": "MINI VAN BOX", "BU": "KLS", "Kategori": "Service", "Detail": "GANTI OLI MESIN + FINAL KIR + KEBOCORAN OLI MESIN + SENSOR ENGINE NYALA + KABIN KEROPOS", "ArmadaPengganti": "Tidak ada", "KM": "439316", "NoBooking": "BMR-202608-1059", "Plan": "22 Agu 2026", "TglMasuk": "22 Agu 2026", "TglSelesai": "", "Lama": "3 Hari", "Status": "Delay"}, {"Tanggal": "26 Agu 2026", "No": "1", "Kode": "A81", "Nopol": "A8963ZD", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Barcode BBM", "Detail": "BARCODE BBM BERMASALAH", "ArmadaPengganti": "MRP21 A8606WX", "KM": "318462", "NoBooking": "", "Plan": "", "TglMasuk": "4 Mei 2026", "TglSelesai": "", "Lama": "115 Hari", "Status": "Delay"}, {"Tanggal": "26 Agu 2026", "No": "2", "Kode": "A118", "Nopol": "A8124ZH", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Asuransi", "Detail": "ASURANSI PASCA ACCIDENT DI TOL KARAWANG KLARI SSM B", "ArmadaPengganti": "MRP31 A8463ZW", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "19 Jun 2026", "TglSelesai": "", "Lama": "69 Hari", "Status": "Delay"}, {"Tanggal": "26 Agu 2026", "No": "3", "Kode": "A7T", "Nopol": "B9070BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "PERSNELING SUSAH MASUK/KERAS", "ArmadaPengganti": "Tidak ada", "KM": "662848", "NoBooking": "BMR-202607-0047", "Plan": "", "TglMasuk": "2 Jul 2026", "TglSelesai": "", "Lama": "56 Hari", "Status": "Delay"}, {"Tanggal": "26 Agu 2026", "No": "4", "Kode": "F02", "Nopol": "A8607WX", "Type": "CDE LONG CHASSIS", "BU": "FBI", "Kategori": "Service", "Detail": "CEK MESIN BUNYI KASAR (CEK OLI BERKURANG AIR RADIATOR HABIS)", "ArmadaPengganti": "MRP23 A8617XA", "KM": "561334", "NoBooking": "BMR-202608-0093", "Plan": "", "TglMasuk": "3 Agu 2026", "TglSelesai": "", "Lama": "24 Hari", "Status": "Delay"}, {"Tanggal": "26 Agu 2026", "No": "5", "Kode": "A6F", "Nopol": "A8186YX", "Type": "FUSO", "BU": "AHI", "Kategori": "Service", "Detail": "FINAL CEK KIR + KOPLING DALEM GIGI PERSNELING KERAS", "ArmadaPengganti": "Tidak ada", "KM": "716751", "NoBooking": "BMR-202608-0931", "Plan": "20 Agu 2026", "TglMasuk": "20 Agu 2026", "TglSelesai": "", "Lama": "7 Hari", "Status": "Delay"}, {"Tanggal": "26 Agu 2026", "No": "6", "Kode": "A54", "Nopol": "A8446ZY", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "FINAL CEK KIR + GANTI BAN LANJUT SETEMPEL BAN DI BUANA LIPOO CIKARANG DELAY KONSTRUKSI KABIN KEROPOS", "ArmadaPengganti": "MRP20 A8615XA", "KM": "625160", "NoBooking": "BMR-202608-1050", "Plan": "22 Agu 2026", "TglMasuk": "22 Agu 2026", "TglSelesai": "", "Lama": "5 Hari", "Status": "Delay"}, {"Tanggal": "26 Agu 2026", "No": "7", "Kode": "A101", "Nopol": "A8654ZF", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service Center", "Detail": "PREVENTIF TAIL LIFT TEAM SVC CENTER", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "8", "Kode": "F13", "Nopol": "A8506ZD", "Type": "CDE LONG CHASSIS", "BU": "FBI", "Kategori": "Service", "Detail": "CEK PRA UJI KIR MASA KIR HABIS TGL 26 SEP 2026", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "9", "Kode": "A55", "Nopol": "A8451ZY", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "CEK PRA UJI KIR MASA KIR HABIS TGL 26 AGU 2026", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "10", "Kode": "A100", "Nopol": "A8658ZF", "Type": "CDD LONG CHASSIS", "BU": "AHI", "Kategori": "Konstruksi", "Detail": "CAT TAIL GATE", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "11", "Kode": "A10T", "Nopol": "A8413VD", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Konstruksi", "Detail": "PERBAIKAN KUNCI PENGAMAN PINTU BOX BELAKANG", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "12", "Kode": "A160", "Nopol": "A8237VC", "Type": "CDE LONG CHASSIS", "BU": "AHI", "Kategori": "Service", "Detail": "TIDAK BISA STARTER KALAU PAGI", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "13", "Kode": "A146", "Nopol": "A8104ZF", "Type": "CDE LONG CHASSIS", "BU": "AHI", "Kategori": "Konstruksi", "Detail": "PERBAIKAN KUNCI PENGAMAN PINTU BOX BELAKANG", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "14", "Kode": "A6T", "Nopol": "B9064BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "FINAL CEK KIR + PERBAIKAN SPAKBOR & KOROSI", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "15", "Kode": "A1T", "Nopol": "B9055BEN", "Type": "WINGBOX", "BU": "AHI", "Kategori": "Service", "Detail": "HIDROLIK WING BOX SEBELAH KIRI BELAKANG BOCOR", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "16", "Kode": "A2TH", "Nopol": "A8325VD", "Type": "TRACTOR HEAD", "BU": "AHI", "Kategori": "Service", "Detail": "GENERAL CHEK ARMADA AKAN JALAN KE SIDOARJO", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "1", "Kode": "I17TH", "Nopol": "B9011BEA", "Type": "TRACTOR HEAD", "BU": "HCI", "Kategori": "Service", "Detail": "CEK RADIATOR NAMBAH AIR 1 BOTOL TANGKI BBM REMBES", "ArmadaPengganti": "Tidak ada", "KM": "964916", "NoBooking": "BMR-202608-0630", "Plan": "", "TglMasuk": "13 Agu 2026", "TglSelesai": "", "Lama": "14 Hari", "Status": "Delay"}, {"Tanggal": "26 Agu 2026", "No": "2", "Kode": "I114", "Nopol": "A8472VC", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Asuransi", "Detail": "ACCIDENT DI TOL JAKPEK ARMADA LANJUT KIRIM ASURANSI KMS", "ArmadaPengganti": "MRP22 A8049ZX", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "11 Jul 2026", "TglSelesai": "", "Lama": "47 Hari", "Status": "Delay"}, {"Tanggal": "26 Agu 2026", "No": "3", "Kode": "I37", "Nopol": "A8443ZY", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Asuransi", "Detail": "CEK PASCA INSIDEN DI SEREMPET I12TH DI DC LANJUT PROSES ASURANSI", "ArmadaPengganti": "MRP27 A8801ZF", "KM": "", "NoBooking": "", "Plan": "", "TglMasuk": "13 Agu 2026", "TglSelesai": "", "Lama": "14 Hari", "Status": "Delay"}, {"Tanggal": "26 Agu 2026", "No": "4", "Kode": "I134", "Nopol": "A8276VD", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "CEK CCTV ULANG PASCA HILANG BAN", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "5", "Kode": "I93", "Nopol": "A8719VB", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "Service", "Detail": "CEK PRA UJI KIR MASA KIR HABIS TGL 26 SEP 2026", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "6", "Kode": "I1F", "Nopol": "A8311YX", "Type": "FUSO", "BU": "HCI", "Kategori": "Service", "Detail": "GANTI OLI MESIN", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "7", "Kode": "I14TH", "Nopol": "A8062VB", "Type": "TRACTOR HEAD", "BU": "HCI", "Kategori": "Service", "Detail": "GENERAL CHEK ARMADA AKAN JALAN KE SIDOARJO", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "8", "Kode": "I125", "Nopol": "A8550VC", "Type": "CDD LONG CHASSIS", "BU": "HCI", "Kategori": "KIR", "Detail": "UJI KIR MANDIRI DI BALARAJA", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "9", "Kode": "I75", "Nopol": "A8182ZV", "Type": "CDE LONG CHASSIS", "BU": "HCI", "Kategori": "KIR", "Detail": "UJI KIR MANDIRI DI BALARAJA", "ArmadaPengganti": "Tidak ada", "KM": "", "NoBooking": "", "Plan": "26 Agu 2026", "TglMasuk": "", "TglSelesai": "", "Lama": "", "Status": "Plan"}, {"Tanggal": "26 Agu 2026", "No": "1", "Kode": "K5VB", "Nopol": "A8876ZX", "Type": "MINI VAN BOX", "BU": "KLS", "Kategori": "Service", "Detail": "GANTI OLI MESIN + FINAL KIR + KEBOCORAN OLI MESIN + SENSOR ENGINE NYALA + KABIN KEROPOS", "ArmadaPengganti": "Tidak ada", "KM": "439316", "NoBooking": "BMR-202608-1059", "Plan": "22 Agu 2026", "TglMasuk": "22 Agu 2026", "TglSelesai": "", "Lama": "5 Hari", "Status": "Delay"}];
+
+const CAT_COLORS = {
+  'Service': '#7C5CFC',
+  'Service Vendor Luar': '#B39BFF',
+  'Service Center': '#5B3DF0',
+  'Asuransi': '#3D8BFF',
+  'Konstruksi': '#F5479C',
+  'Barcode BBM': '#FF6B6B',
+  'KIR': '#0FC2A6',
+  'Accident': '#FF5A6E',
+  'Lainnya': '#FFB020'
+};
+const STATUS_COLORS = {
+  'Delay':'#FF5A6E', 'Selesai':'#0FC2A6', 'Plan':'#3D8BFF', 'Reschedule':'#B366F0'
+};
+function catColor(cat){ return CAT_COLORS[cat] || '#A0A4BD'; }
+function statusClass(s){
+  return { 'Delay':'status-delay','Selesai':'status-selesai','Plan':'status-plan','Reschedule':'status-reschedule' }[s] || '';
+}
+
+// ---- live data state ----
+let DATA = SNAPSHOT_DATA;
+let tanggalList = [], buList = [], katList = [], statusList = [];
+
+function uniqSorted(arr){ return [...new Set(arr)].sort(); }
+const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,Mei:4,Jun:5,Jul:6,Agu:7,Sep:8,Okt:9,Nov:10,Des:11};
+function parseTgl(s){
+  const parts = s.split(' ');
+  if(parts.length<3) return new Date(0);
+  const [d,m,y] = parts;
+  return new Date(parseInt(y), MONTHS[m] ?? 0, parseInt(d));
+}
+
+const fTanggalFrom = document.getElementById('fTanggalFrom');
+const fTanggalTo = document.getElementById('fTanggalTo');
+const fBU = document.getElementById('fBU');
+const fKategori = document.getElementById('fKategori');
+const fStatus = document.getElementById('fStatus');
+const fSearch = document.getElementById('fSearch');
+
+function rebuildFiltersAndRender(){
+  tanggalList = uniqSorted(DATA.map(r=>r.Tanggal));
+  tanggalList.sort((a,b)=>parseTgl(a)-parseTgl(b));
+  buList = uniqSorted(DATA.map(r=>r.BU));
+  katList = uniqSorted(DATA.map(r=>r.Kategori));
+  statusList = uniqSorted(DATA.map(r=>r.Status));
+
+  fTanggalFrom.innerHTML = tanggalList.map(t=>`<option value="${t}">${t}</option>`).join('');
+  fTanggalTo.innerHTML = tanggalList.map(t=>`<option value="${t}">${t}</option>`).join('');
+  fBU.innerHTML = '<option value="">Semua BU</option>' + buList.map(b=>`<option value="${b}">${b}</option>`).join('');
+  fKategori.innerHTML = '<option value="">Semua Kategori</option>' + katList.map(k=>`<option value="${k}">${k}</option>`).join('');
+  fStatus.innerHTML = '<option value="">Semua Status</option>' + statusList.map(s=>`<option value="${s}">${s}</option>`).join('');
+
+  fTanggalFrom.value = tanggalList[tanggalList.length-1];
+  fTanggalTo.value = tanggalList[tanggalList.length-1];
+
+  render();
+}
+
+// ---- live connection to Google Apps Script Web App ----
+const gasUrlInput = document.getElementById('gasUrlInput');
+const connectBtn = document.getElementById('connectBtn');
+const refreshBtn = document.getElementById('refreshBtn');
+const liveDot = document.getElementById('liveDot');
+const liveText = document.getElementById('liveText');
+
+function setLiveStatus(kind, text){
+  liveText.textContent = text;
+  const colors = { ok:'#0FC2A6', loading:'#FFB020', error:'#FF5A6E', idle:'#A0A4BD' };
+  liveDot.style.background = colors[kind] || colors.idle;
+  liveDot.style.boxShadow = kind==='ok' ? '0 0 0 4px rgba(15,194,166,.18)' : 'none';
+}
+
+async function loadLiveData(url){
+  if(!url){ return; }
+  setLiveStatus('loading', 'Memuat data dari sheet...');
+  try{
+    const res = await fetch(url, { cache: 'no-store' });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const json = await res.json();
+    if(json && json.error) throw new Error(json.error);
+    if(!Array.isArray(json) || json.length===0) throw new Error('Data kosong / format tidak sesuai');
+    DATA = json;
+    rebuildFiltersAndRender();
+    const now = new Date();
+    setLiveStatus('ok', `Live · update ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} · ${DATA.length} baris`);
+    refreshBtn.style.display = 'inline-flex';
+  }catch(err){
+    console.error(err);
+    setLiveStatus('error', 'Gagal konek (' + err.message + ') — pakai snapshot');
+    DATA = SNAPSHOT_DATA;
+    rebuildFiltersAndRender();
+  }
+}
+
+connectBtn.addEventListener('click', ()=>{
+  const url = gasUrlInput.value.trim();
+  if(!url){ setLiveStatus('error', 'URL kosong'); return; }
+  loadLiveData(url);
+});
+
+// Auto-connect ke Apps Script yang sudah tertanam saat halaman dibuka
+if(gasUrlInput.value.trim()){
+  loadLiveData(gasUrlInput.value.trim());
+}
+refreshBtn.addEventListener('click', ()=>{
+  const url = gasUrlInput.value.trim();
+  loadLiveData(url);
+});
+
+let sortKey = 'No', sortDir = 1;
+let catChart, statusChart, buChart;
+
+function activeRange(){
+  let from = fTanggalFrom.value, to = fTanggalTo.value;
+  let fromD = parseTgl(from), toD = parseTgl(to);
+  if(fromD > toD){ [from,to] = [to,from]; }
+  return {from, to};
+}
+
+function currentFiltered(){
+  const {from, to} = activeRange();
+  const fromD = parseTgl(from), toD = parseTgl(to);
+  const bu = fBU.value;
+  const kat = fKategori.value;
+  const st = fStatus.value;
+  const q = fSearch.value.trim().toLowerCase();
+  return DATA.filter(r=>{
+    const rD = parseTgl(r.Tanggal);
+    if(rD < fromD || rD > toD) return false;
+    if(bu && r.BU !== bu) return false;
+    if(kat && r.Kategori !== kat) return false;
+    if(st && r.Status !== st) return false;
+    if(q){
+      const hay = (r.Kode+' '+r.Nopol+' '+r.Detail+' '+r.Type).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function animateValue(el, to){
+  const from = parseInt(el.textContent.replace(/\D/g,'')) || 0;
+  const dur = 400, start = performance.now();
+  function step(now){
+    const p = Math.min(1,(now-start)/dur);
+    const val = Math.round(from + (to-from)*p);
+    el.textContent = val;
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function pct(n,total){ return total ? Math.round(n/total*100) : 0; }
+
+function render(){
+  const rows = currentFiltered();
+  const total = rows.length;
+
+  const byStatus = {};
+  statusList.forEach(s=>byStatus[s]=0);
+  rows.forEach(r=>{ byStatus[r.Status] = (byStatus[r.Status]||0)+1; });
+
+  animateValue(document.getElementById('kpiTotal'), total);
+  const {from:rFrom, to:rTo} = activeRange();
+  const rangeLabel = rFrom===rTo ? rFrom : `${rFrom} – ${rTo}`;
+  document.getElementById('kpiTotalSub').textContent = rangeLabel + (fBU.value? ' · '+fBU.value : ' · semua BU');
+
+  animateValue(document.getElementById('kpiDelay'), byStatus['Delay']||0);
+  document.getElementById('kpiDelaySub').textContent = pct(byStatus['Delay']||0,total)+'% dari total';
+  animateValue(document.getElementById('kpiSelesai'), byStatus['Selesai']||0);
+  document.getElementById('kpiSelesaiSub').textContent = pct(byStatus['Selesai']||0,total)+'% dari total';
+  animateValue(document.getElementById('kpiPlan'), byStatus['Plan']||0);
+  document.getElementById('kpiPlanSub').textContent = pct(byStatus['Plan']||0,total)+'% dari total';
+  animateValue(document.getElementById('kpiResch'), byStatus['Reschedule']||0);
+  document.getElementById('kpiReschSub').textContent = pct(byStatus['Reschedule']||0,total)+'% dari total';
+
+  const catCounts = {};
+  rows.forEach(r=>{ catCounts[r.Kategori] = (catCounts[r.Kategori]||0)+1; });
+  const catEntries = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('catSub').textContent = `Jumlah unit per kategori — ${rangeLabel}${fBU.value? ' · '+fBU.value:''} (total ${total} unit)`;
+
+  const catCtx = document.getElementById('catChart');
+  if(catChart) catChart.destroy();
+  catChart = new Chart(catCtx, {
+    type:'bar',
+    data:{
+      labels: catEntries.map(e=>e[0]),
+      datasets:[{
+        data: catEntries.map(e=>e[1]),
+        backgroundColor: catEntries.map(e=>catColor(e[0])),
+        borderRadius:7, barThickness:18
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{ backgroundColor:'#fff', borderColor:'#EAECF6', borderWidth:1, padding:10, titleColor:'#191B2E', bodyColor:'#191B2E', titleFont:{weight:700} } },
+      scales:{
+        x:{ beginAtZero:true, ticks:{color:'#A0A4BD', font:{size:11}, precision:0}, grid:{color:'#EFF0F9'} },
+        y:{ ticks:{color:'#43465C', font:{size:11.5, weight:500}}, grid:{display:false} }
+      }
+    }
+  });
+
+  const stCtx = document.getElementById('statusChart');
+  if(statusChart) statusChart.destroy();
+  const stLabels = statusList.filter(s=>byStatus[s]>0);
+  statusChart = new Chart(stCtx, {
+    type:'doughnut',
+    data:{
+      labels: stLabels,
+      datasets:[{ data: stLabels.map(s=>byStatus[s]), backgroundColor: stLabels.map(s=>STATUS_COLORS[s]), borderWidth:4, borderColor:'#fff' }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'68%',
+      plugins:{ legend:{display:false},
+        tooltip:{ backgroundColor:'#fff', borderColor:'#EAECF6', borderWidth:1, padding:10, titleColor:'#191B2E', bodyColor:'#191B2E' } }
+    }
+  });
+  document.getElementById('statusRows').innerHTML = stLabels.map(s=>`
+    <div class="cat-row">
+      <span class="dot" style="background:${STATUS_COLORS[s]}"></span>
+      <span class="name">${s}</span>
+      <span class="count">${byStatus[s]} unit</span>
+    </div>`).join('');
+
+  document.getElementById('buSub').textContent = `Distribusi unit per Business Unit — ${rangeLabel}`;
+  const buRows = DATA.filter(r=>{
+    const rD = parseTgl(r.Tanggal);
+    if(rD < parseTgl(rFrom) || rD > parseTgl(rTo)) return false;
+    if(fKategori.value && r.Kategori !== fKategori.value) return false;
+    if(fStatus.value && r.Status !== fStatus.value) return false;
+    return true;
+  });
+  const buCounts = {};
+  buList.forEach(b=>buCounts[b]=0);
+  buRows.forEach(r=>{ buCounts[r.BU] = (buCounts[r.BU]||0)+1; });
+  const buCtx = document.getElementById('buChart');
+  if(buChart) buChart.destroy();
+  const buGrad = buCtx.getContext('2d').createLinearGradient(0,0,0,220);
+  buGrad.addColorStop(0,'#9B87FF'); buGrad.addColorStop(1,'#5B3DF0');
+  buChart = new Chart(buCtx, {
+    type:'bar',
+    data:{
+      labels: buList,
+      datasets:[{ data: buList.map(b=>buCounts[b]), backgroundColor:buGrad, borderRadius:8, barThickness:36 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{ backgroundColor:'#fff', borderColor:'#EAECF6', borderWidth:1, padding:10, titleColor:'#191B2E', bodyColor:'#191B2E' } },
+      scales:{
+        x:{ ticks:{color:'#43465C', font:{size:11.5, weight:500}}, grid:{display:false} },
+        y:{ beginAtZero:true, ticks:{color:'#A0A4BD', font:{size:11}, precision:0}, grid:{color:'#EFF0F9'} }
+      }
+    }
+  });
+
+  const sorted = [...rows].sort((a,b)=>{
+    let av=a[sortKey], bv=b[sortKey];
+    if(sortKey==='No'){ av=parseInt(av)||0; bv=parseInt(bv)||0; }
+    if(av<bv) return -1*sortDir;
+    if(av>bv) return 1*sortDir;
+    return 0;
+  });
+  document.getElementById('tableCount').textContent = `${sorted.length} baris`;
+  const tbody = document.getElementById('tableBody');
+  const emptyState = document.getElementById('emptyState');
+  if(sorted.length===0){
+    tbody.innerHTML=''; emptyState.style.display='block';
+  } else {
+    emptyState.style.display='none';
+    tbody.innerHTML = sorted.map(r=>`
+      <tr>
+        <td class="mono" style="white-space:nowrap;color:var(--text-dim);font-size:12px;">${r.Tanggal}</td>
+        <td class="kode">${r.Kode}</td>
+        <td class="nopol">${r.Nopol}</td>
+        <td style="color:var(--text-dim);white-space:nowrap;">${r.Type}</td>
+        <td class="bu"><span class="bu-chip">${r.BU}</span></td>
+        <td><span class="cat-chip"><span class="dot" style="background:${catColor(r.Kategori)}"></span>${r.Kategori}</span></td>
+        <td class="detail">${r.Detail}</td>
+        <td class="lama">${r.Lama || '—'}</td>
+        <td><span class="status-chip ${statusClass(r.Status)}">${r.Status}</span></td>
+      </tr>`).join('');
+  }
+}
+
+[fTanggalFrom,fTanggalTo,fBU,fKategori,fStatus].forEach(el=>el.addEventListener('change', render));
+fSearch.addEventListener('input', render);
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  fTanggalFrom.value = tanggalList[tanggalList.length-1];
+  fTanggalTo.value = tanggalList[tanggalList.length-1];
+  fBU.value=''; fKategori.value=''; fStatus.value=''; fSearch.value='';
+  render();
+});
+document.getElementById('quickToday').addEventListener('click', ()=>{
+  fTanggalFrom.value = tanggalList[tanggalList.length-1];
+  fTanggalTo.value = tanggalList[tanggalList.length-1];
+  render();
+});
+document.getElementById('quickAll').addEventListener('click', ()=>{
+  fTanggalFrom.value = tanggalList[0];
+  fTanggalTo.value = tanggalList[tanggalList.length-1];
+  render();
+});
+document.querySelectorAll('thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(!key) return;
+    if(sortKey===key) sortDir*=-1; else { sortKey=key; sortDir=1; }
+    document.querySelectorAll('thead th .arrow').forEach(a=>a.textContent='');
+    th.querySelector('.arrow').textContent = sortDir===1 ? ' ▲' : ' ▼';
+    render();
+  });
+});
+
+rebuildFiltersAndRender();
+</script>
+</body>
+</html>

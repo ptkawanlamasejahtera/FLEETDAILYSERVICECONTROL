@@ -525,11 +525,11 @@ async function loadLiveData(url){
   }
 }
 
-const TYPE_PALETTE = ['#7C5CFC','#0FC2A6','#FF6B6B','#3D8BFF','#FFB020','#F5479C','#8BD450','#B366F0','#FF8A5C','#2FB8D4'];
-function typeColor(name){
+const ROW_PALETTE = ['#7C5CFC','#0FC2A6','#FF6B6B','#3D8BFF','#FFB020','#F5479C','#8BD450','#B366F0','#FF8A5C','#2FB8D4'];
+function rowColor(name){
   let h = 0;
   for(let i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) >>> 0;
-  return TYPE_PALETTE[h % TYPE_PALETTE.length];
+  return ROW_PALETTE[h % ROW_PALETTE.length];
 }
 function heatBg(val, max){
   if(!val || !max) return '';
@@ -546,7 +546,29 @@ function renderSummaryArmada(){
   const badge = document.getElementById('summaryBadge');
   const badgeText = document.getElementById('summaryBadgeText');
 
-  if(!SUMMARY_ARMADA || !SUMMARY_ARMADA.types || SUMMARY_ARMADA.types.length===0){
+  // dukung format baru { rowAxisLabel, columns, rows, grandTotalLabel, totals }
+  // dan fallback format lama { buList, types, grandTotalLabel, totals }
+  let rowAxisLabel, columns, dataRows, grandTotalLabel, totals;
+  if(SUMMARY_ARMADA && Array.isArray(SUMMARY_ARMADA.rows)){
+    rowAxisLabel = SUMMARY_ARMADA.rowAxisLabel || 'Kategori';
+    columns = SUMMARY_ARMADA.columns || [];
+    dataRows = SUMMARY_ARMADA.rows;
+    grandTotalLabel = SUMMARY_ARMADA.grandTotalLabel;
+    totals = SUMMARY_ARMADA.totals;
+  } else if(SUMMARY_ARMADA && Array.isArray(SUMMARY_ARMADA.types)){
+    rowAxisLabel = 'Type';
+    columns = SUMMARY_ARMADA.buList || [];
+    dataRows = SUMMARY_ARMADA.types.map(t=>({ label: t.Type, counts: t.counts }));
+    grandTotalLabel = SUMMARY_ARMADA.grandTotalLabel;
+    totals = SUMMARY_ARMADA.totals;
+  } else {
+    table.style.display = 'none';
+    emptyState.style.display = 'block';
+    badge.style.display = 'none';
+    return;
+  }
+
+  if(!dataRows || dataRows.length===0){
     table.style.display = 'none';
     emptyState.style.display = 'block';
     badge.style.display = 'none';
@@ -555,37 +577,35 @@ function renderSummaryArmada(){
   table.style.display = '';
   emptyState.style.display = 'none';
 
-  const { buList: sBuList, grandTotalLabel, types, totals } = SUMMARY_ARMADA;
-
   thead.innerHTML = `<tr>
-    <th>Type</th>
-    ${sBuList.map(b=>`<th class="num">${b}</th>`).join('')}
+    <th>${rowAxisLabel}</th>
+    ${columns.map(c=>`<th class="num">${c}</th>`).join('')}
     <th class="num">${grandTotalLabel || 'Grand Total'}</th>
   </tr>`;
 
-  // skala heatmap: nilai maksimum antar sel BU (bukan grand total)
+  // skala heatmap: nilai maksimum antar sel (bukan kolom grand total)
   let maxCell = 0;
-  types.forEach(t=>{ sBuList.forEach(b=>{ const v=parseInt(t.counts[b])||0; if(v>maxCell) maxCell=v; }); });
+  dataRows.forEach(row=>{ columns.forEach(c=>{ const v=parseInt(row.counts[c])||0; if(v>maxCell) maxCell=v; }); });
 
-  const overallTotal = totals ? (parseInt(totals[grandTotalLabel])||0) : types.reduce((s,t)=>s+(parseInt(t.counts[grandTotalLabel])||0),0);
+  const overallTotal = totals ? (parseInt(totals[grandTotalLabel])||0) : dataRows.reduce((s,row)=>s+(parseInt(row.counts[grandTotalLabel])||0),0);
 
-  const bodyRows = types.map(t=>{
-    const grandVal = parseInt(t.counts[grandTotalLabel]) || 0;
+  const bodyRows = dataRows.map(row=>{
+    const grandVal = parseInt(row.counts[grandTotalLabel]) || 0;
     const barPct = overallTotal ? Math.max(2, Math.round(grandVal/overallTotal*100)) : 0;
-    const c = typeColor(t.Type);
+    const c = rowColor(row.label);
     return `
     <tr>
       <td class="type-name">
-        <div class="type-name-inner"><span class="type-dot" style="background:${c}"></span>${t.Type}</div>
+        <div class="type-name-inner"><span class="type-dot" style="background:${c}"></span>${row.label}</div>
         <div class="type-bar"><div class="type-bar-fill" style="width:${barPct}%;background:${c}"></div></div>
       </td>
-      ${sBuList.map(b=>{
-        const raw = t.counts[b];
+      ${columns.map(colName=>{
+        const raw = row.counts[colName];
         const v = parseInt(raw)||0;
         const cls = v===0 || raw==='' ? ' zero' : '';
         return `<td class="num${cls}" style="${heatBg(v,maxCell)}">${raw || '—'}</td>`;
       }).join('')}
-      <td class="num grand">${t.counts[grandTotalLabel] || '—'}</td>
+      <td class="num grand">${row.counts[grandTotalLabel] || '—'}</td>
     </tr>`;
   }).join('');
 
@@ -593,7 +613,7 @@ function renderSummaryArmada(){
   if(totals){
     totalRow = `<tr class="total-row">
       <td class="type-name">Grand Total</td>
-      ${sBuList.map(b=>`<td class="num">${totals[b] || '—'}</td>`).join('')}
+      ${columns.map(c=>`<td class="num">${totals[c] || '—'}</td>`).join('')}
       <td class="num grand">${totals[grandTotalLabel] || '—'}</td>
     </tr>`;
   }
@@ -601,7 +621,7 @@ function renderSummaryArmada(){
   tbody.innerHTML = bodyRows + totalRow;
 
   badge.style.display = 'flex';
-  badgeText.textContent = `${overallTotal} unit · ${types.length} tipe · ${sBuList.length} BU`;
+  badgeText.textContent = `${overallTotal} unit · ${dataRows.length} ${rowAxisLabel.toLowerCase()} · ${columns.length} kolom`;
 }
 
 connectBtn.addEventListener('click', ()=>{

@@ -191,6 +191,7 @@
   .status-antri{background:#FFF1D6;color:#B4780A;}
   .status-proses{background:#FDE0F1;color:#C42186;}
   .status-reschedule{background:#F3E4FF;color:#9333CE;}
+  .jam-selesai{font-size:10.5px;color:var(--selesai);font-weight:600;margin-top:4px;font-family:'JetBrains Mono';}
   td.lama{font-family:'JetBrains Mono';color:var(--text-dim);white-space:nowrap;font-size:12px;}
 
   .summary-head-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:2px;flex-wrap:wrap;}
@@ -1018,7 +1019,10 @@ function render(){
         <td><span class="cat-chip"><span class="dot" style="background:${catColor(r.Kategori)}"></span>${r.Kategori}</span></td>
         <td class="detail">${r.Detail}</td>
         <td class="lama">${r.Lama || '—'}</td>
-        <td><span class="status-chip ${statusClass(r.Status)}">${r.Status}</span></td>
+        <td>
+          <span class="status-chip ${statusClass(r.Status)}">${r.Status}</span>
+          ${r.JamSelesai ? `<div class="jam-selesai">Selesai jam ${r.JamSelesai}</div>` : ''}
+        </td>
       </tr>`).join('');
   }
 }

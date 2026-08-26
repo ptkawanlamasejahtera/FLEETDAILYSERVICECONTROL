@@ -340,7 +340,7 @@
     <div class="field">
       <label>&nbsp;</label>
       <div class="date-nav">
-        <button id="quickToday" title="Hanya tanggal terbaru">Terbaru</button>
+        <button id="quickToday" title="Tanggal hari ini">Hari Ini</button>
         <button id="quickAll" title="Semua tanggal">Semua</button>
       </div>
     </div>
@@ -374,7 +374,7 @@
       </div>
       <div class="kpi-cell total">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h13v13H1z"/><path d="M14 8h4l3 3v5h-7V8z"/><circle cx="6" cy="18.5" r="1.8"/><circle cx="17.5" cy="18.5" r="1.8"/></svg></div>
-        <div class="label">Total Fleet Not Available</div>
+        <div class="label">Planned Service</div>
         <div class="value" id="kpiTotal">0</div>
         <div class="sub" id="kpiTotalSub">pada tanggal terpilih</div>
       </div>
@@ -386,7 +386,7 @@
       </div>
       <div class="kpi-cell antri">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12"/><path d="M6 22h12"/><path d="M6 2c0 5 6 6 6 10s-6 5-6 10"/><path d="M18 2c0 5-6 6-6 10s6 5 6 10"/></svg></div>
-        <div class="label">Plan/Antri</div>
+        <div class="label">Antri</div>
         <div class="value" id="kpiAntri">0</div>
         <div class="sub" id="kpiAntriSub">— %</div>
       </div>
@@ -434,7 +434,7 @@
 
   <div class="panels">
     <div class="panel">
-      <h2>Total Fleet Not Available per Kategori</h2>
+      <h2>Planned Service per Kategori</h2>
       <p class="panel-sub" id="catSub">Jumlah unit per kategori service pada filter terpilih</p>
       <div class="chart-box"><canvas id="catChart"></canvas></div>
     </div>
@@ -448,12 +448,12 @@
 
   <div class="panels" style="margin-bottom:22px;">
     <div class="panel" style="margin-bottom:0;">
-      <h2>Total Fleet Not Available per BU (rentang tanggal terpilih)</h2>
+      <h2>Planned Service per BU (rentang tanggal terpilih)</h2>
       <p class="panel-sub" id="buSub">Distribusi unit yang sedang service per Business Unit</p>
       <div class="chart-box small"><canvas id="buChart"></canvas></div>
     </div>
     <div class="panel" style="margin-bottom:0;">
-      <h2>Total Fleet Not Available per Type</h2>
+      <h2>Planned Service per Type</h2>
       <p class="panel-sub" id="typeSub">Distribusi unit yang sedang service per Tipe Armada</p>
       <div class="chart-box small"><canvas id="typeChart"></canvas></div>
     </div>
@@ -521,11 +521,27 @@ let tanggalList = [], buList = [], katList = [], statusList = [], typeList = [];
 
 function uniqSorted(arr){ return [...new Set(arr)].sort(); }
 const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,Mei:4,Jun:5,Jul:6,Agu:7,Sep:8,Okt:9,Nov:10,Des:11};
+const MONTHS_ID_ARR = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 function parseTgl(s){
   const parts = s.split(' ');
   if(parts.length<3) return new Date(0);
   const [d,m,y] = parts;
   return new Date(parseInt(y), MONTHS[m] ?? 0, parseInt(d));
+}
+function getTodayId(){
+  const d = new Date();
+  return d.getDate()+' '+MONTHS_ID_ARR[d.getMonth()]+' '+d.getFullYear();
+}
+// Pilih tanggal default = hari ini. Kalau tidak ada data utk hari ini,
+// fallback ke tanggal terdekat sebelum hari ini; kalau tetap tidak ada, pakai tanggal terakhir yang ada.
+function pickDefaultDate(){
+  if(tanggalList.length===0) return '';
+  const todayId = getTodayId();
+  if(tanggalList.includes(todayId)) return todayId;
+  const todayTs = parseTgl(todayId).getTime();
+  const before = tanggalList.filter(t=>parseTgl(t).getTime() <= todayTs);
+  if(before.length>0) return before[before.length-1];
+  return tanggalList[tanggalList.length-1];
 }
 
 const fTanggalFrom = document.getElementById('fTanggalFrom');
@@ -549,8 +565,9 @@ function rebuildFiltersAndRender(){
   fKategori.innerHTML = '<option value="">Semua Kategori</option>' + katList.map(k=>`<option value="${k}">${k}</option>`).join('');
   fStatus.innerHTML = '<option value="">Semua Status</option>' + statusList.map(s=>`<option value="${s}">${s}</option>`).join('');
 
-  fTanggalFrom.value = tanggalList[tanggalList.length-1];
-  fTanggalTo.value = tanggalList[tanggalList.length-1];
+  const defaultDate = pickDefaultDate();
+  fTanggalFrom.value = defaultDate;
+  fTanggalTo.value = defaultDate;
 
   render();
 }
@@ -1009,14 +1026,16 @@ function render(){
 [fTanggalFrom,fTanggalTo,fBU,fKategori,fStatus].forEach(el=>el.addEventListener('change', render));
 fSearch.addEventListener('input', render);
 document.getElementById('resetBtn').addEventListener('click', ()=>{
-  fTanggalFrom.value = tanggalList[tanggalList.length-1];
-  fTanggalTo.value = tanggalList[tanggalList.length-1];
+  const d = pickDefaultDate();
+  fTanggalFrom.value = d;
+  fTanggalTo.value = d;
   fBU.value=''; fKategori.value=''; fStatus.value=''; fSearch.value='';
   render();
 });
 document.getElementById('quickToday').addEventListener('click', ()=>{
-  fTanggalFrom.value = tanggalList[tanggalList.length-1];
-  fTanggalTo.value = tanggalList[tanggalList.length-1];
+  const d = pickDefaultDate();
+  fTanggalFrom.value = d;
+  fTanggalTo.value = d;
   render();
 });
 document.getElementById('quickAll').addEventListener('click', ()=>{

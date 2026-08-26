@@ -48,8 +48,9 @@
     padding:24px 32px;
   }
   .brand{display:flex;align-items:center;gap:14px;}
-  .brand-row{
-    flex-basis:100%;padding-bottom:16px;margin-bottom:14px;border-bottom:1px solid var(--border-soft);
+  .brand-status-row{
+    flex-basis:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    padding-bottom:16px;margin-bottom:14px;border-bottom:1px solid var(--border-soft);
   }
   .brand-mark{
     width:42px;height:42px;border-radius:13px;
@@ -93,8 +94,7 @@
   select:focus,input:focus{border-color:var(--violet);background:#fff;box-shadow:0 0 0 3px rgba(124,92,252,.12);}
   .field.search input{min-width:230px;}
   .status-row{
-    flex-basis:100%;display:flex;align-items:center;gap:10px;justify-content:flex-end;
-    padding-bottom:14px;margin-bottom:4px;border-bottom:1px solid var(--border-soft);
+    display:flex;align-items:center;gap:10px;justify-content:flex-end;flex-wrap:wrap;
   }
   .reset-btn{
     background:var(--panel-soft);border:1.5px solid var(--border);color:var(--text-dim);
@@ -259,7 +259,7 @@
   /* ===== MODE SCREENSHOT (compact) ===== */
   body.compact .wrap{max-width:1500px;padding:4px 22px 16px;}
   body.compact .topbar{padding:12px 22px;}
-  body.compact .brand-row{padding-bottom:9px;margin-bottom:8px;}
+  body.compact .brand-status-row{padding-bottom:9px;margin-bottom:8px;}
   body.compact .brand-mark{width:32px;height:32px;border-radius:10px;font-size:13px;}
   body.compact .brand h1{font-size:14.5px;}
   body.compact .brand p{font-size:10.5px;margin-top:0;}
@@ -268,7 +268,6 @@
   body.compact #connectBtn{display:none;}
 
   body.compact .filters{padding:9px 14px;gap:9px;margin-bottom:10px;border-radius:12px;}
-  body.compact .status-row{padding-bottom:9px;margin-bottom:2px;}
   body.compact .auto-refresh-toggle{padding:5px 10px;font-size:11px;}
   body.compact .field label{font-size:9px;}
   body.compact select,body.compact input[type=text]{padding:5px 9px;font-size:11.5px;min-width:120px;border-radius:8px;}
@@ -316,20 +315,22 @@
 <div class="wrap">
 
   <div class="filters">
-    <div class="brand brand-row">
-      <div class="brand-mark">DC</div>
-      <div>
-        <h1>FLEET DAILY SERVICE CONTROL — Armada DC Jababeka</h1>
-        <p>Daily Service Log · per kategori &amp; BU</p>
+    <div class="brand-status-row">
+      <div class="brand">
+        <div class="brand-mark">DC</div>
+        <div>
+          <h1>FLEET DAILY SERVICE CONTROL — Armada DC Jababeka</h1>
+          <p>Daily Service Log · per kategori &amp; BU</p>
+        </div>
       </div>
-    </div>
-    <div class="status-row">
-      <button class="reset-btn" id="refreshBtn" style="white-space:nowrap;display:none;">&#8635; Refresh Data</button>
-      <label class="auto-refresh-toggle" id="autoRefreshWrap" style="display:none;">
-        <input type="checkbox" id="autoRefreshChk" checked>
-        <span>Auto-refresh <span id="autoRefreshCountdown" class="mono"></span></span>
-      </label>
-      <div class="live-badge" id="liveBadge"><span class="live-dot" id="liveDot" style="background:#A0A4BD;"></span> <span id="liveText">Snapshot (belum tersambung)</span></div>
+      <div class="status-row">
+        <button class="reset-btn" id="refreshBtn" style="white-space:nowrap;display:none;">&#8635; Refresh Data</button>
+        <label class="auto-refresh-toggle" id="autoRefreshWrap" style="display:none;">
+          <input type="checkbox" id="autoRefreshChk" checked>
+          <span>Auto-refresh <span id="autoRefreshCountdown" class="mono"></span></span>
+        </label>
+        <div class="live-badge" id="liveBadge"><span class="live-dot" id="liveDot" style="background:#A0A4BD;"></span> <span id="liveText">Snapshot (belum tersambung)</span></div>
+      </div>
     </div>
     <div class="field">
       <label>Tanggal Dari</label>

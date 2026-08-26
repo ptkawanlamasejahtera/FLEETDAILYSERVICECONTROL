@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <style>
   :root{
     --bg:#F4F5FB;
@@ -817,6 +818,10 @@ refreshBtn.addEventListener('click', ()=>{
 
 let sortKey = 'No', sortDir = 1;
 let catChart, statusChart, buChart, typeChart;
+if(window.ChartDataLabels){
+  Chart.register(ChartDataLabels);
+  Chart.defaults.set('plugins.datalabels', { display:false });
+}
 
 function activeRange(){
   let from = fTanggalFrom.value, to = fTanggalTo.value;
@@ -906,7 +911,8 @@ function render(){
       indexAxis:'y',
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false},
-        tooltip:{ backgroundColor:'#fff', borderColor:'#EAECF6', borderWidth:1, padding:10, titleColor:'#191B2E', bodyColor:'#191B2E', titleFont:{weight:700} } },
+        tooltip:{ backgroundColor:'#fff', borderColor:'#EAECF6', borderWidth:1, padding:10, titleColor:'#191B2E', bodyColor:'#191B2E', titleFont:{weight:700} },
+        datalabels:{ display:true, anchor:'end', align:'end', offset:4, color:'#43465C', font:{weight:700, size:11.5}, formatter:(v)=>v } },
       scales:{
         x:{ beginAtZero:true, ticks:{color:'#A0A4BD', font:{size:11}, precision:0}, grid:{color:'#EFF0F9'} },
         y:{ ticks:{color:'#43465C', font:{size:11.5, weight:500}}, grid:{display:false} }
@@ -926,7 +932,8 @@ function render(){
     options:{
       responsive:true, maintainAspectRatio:false, cutout:'68%',
       plugins:{ legend:{display:false},
-        tooltip:{ backgroundColor:'#fff', borderColor:'#EAECF6', borderWidth:1, padding:10, titleColor:'#191B2E', bodyColor:'#191B2E' } }
+        tooltip:{ backgroundColor:'#fff', borderColor:'#EAECF6', borderWidth:1, padding:10, titleColor:'#191B2E', bodyColor:'#191B2E' },
+        datalabels:{ display:true, color:'#fff', font:{weight:800, size:12.5}, formatter:(v)=>v } }
     }
   });
   document.getElementById('statusRows').innerHTML = stLabels.map(s=>`
@@ -960,7 +967,8 @@ function render(){
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false},
-        tooltip:{ backgroundColor:'#fff', borderColor:'#EAECF6', borderWidth:1, padding:10, titleColor:'#191B2E', bodyColor:'#191B2E' } },
+        tooltip:{ backgroundColor:'#fff', borderColor:'#EAECF6', borderWidth:1, padding:10, titleColor:'#191B2E', bodyColor:'#191B2E' },
+        datalabels:{ display:true, anchor:'end', align:'end', offset:4, color:'#43465C', font:{weight:700, size:11.5}, formatter:(v)=>v||'' } },
       scales:{
         x:{ ticks:{color:'#43465C', font:{size:11.5, weight:500}}, grid:{display:false} },
         y:{ beginAtZero:true, ticks:{color:'#A0A4BD', font:{size:11}, precision:0}, grid:{color:'#EFF0F9'} }
@@ -987,7 +995,8 @@ function render(){
       indexAxis:'y',
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false},
-        tooltip:{ backgroundColor:'#fff', borderColor:'#EAECF6', borderWidth:1, padding:10, titleColor:'#191B2E', bodyColor:'#191B2E' } },
+        tooltip:{ backgroundColor:'#fff', borderColor:'#EAECF6', borderWidth:1, padding:10, titleColor:'#191B2E', bodyColor:'#191B2E' },
+        datalabels:{ display:true, anchor:'end', align:'end', offset:4, color:'#43465C', font:{weight:700, size:11.5}, formatter:(v)=>v } },
       scales:{
         x:{ beginAtZero:true, ticks:{color:'#A0A4BD', font:{size:11}, precision:0}, grid:{color:'#EFF0F9'} },
         y:{ ticks:{color:'#43465C', font:{size:11, weight:500}}, grid:{display:false} }

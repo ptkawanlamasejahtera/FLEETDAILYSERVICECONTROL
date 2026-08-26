@@ -458,7 +458,7 @@
     <div class="panel" style="margin-bottom:0;">
       <h2>Planned Service per Type</h2>
       <p class="panel-sub" id="typeSub">Distribusi unit yang sedang service per Tipe Armada</p>
-      <div class="chart-box small"><canvas id="typeChart"></canvas></div>
+      <div class="chart-box" style="height:340px;"><canvas id="typeChart"></canvas></div>
     </div>
   </div>
 
@@ -981,16 +981,16 @@ function render(){
   const typeCounts = {};
   typeList.forEach(t=>typeCounts[t]=0);
   rows.forEach(r=>{ typeCounts[r.Type] = (typeCounts[r.Type]||0)+1; });
-  const typeEntries = typeList.map(t=>[t, typeCounts[t]]).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]);
+  const typeEntries = typeList.map(t=>[t, typeCounts[t]]).sort((a,b)=>b[1]-a[1]);
   const typeCtx = document.getElementById('typeChart');
   if(typeChart) typeChart.destroy();
-  const typeGrad = typeCtx.getContext('2d').createLinearGradient(0,0,0,220);
+  const typeGrad = typeCtx.getContext('2d').createLinearGradient(0,0,220,0);
   typeGrad.addColorStop(0,'#7FE0D0'); typeGrad.addColorStop(1,'#0FC2A6');
   typeChart = new Chart(typeCtx, {
     type:'bar',
     data:{
       labels: typeEntries.map(e=>e[0]),
-      datasets:[{ data: typeEntries.map(e=>e[1]), backgroundColor:typeGrad, borderRadius:8, barThickness:26 }]
+      datasets:[{ data: typeEntries.map(e=>e[1]), backgroundColor:typeGrad, borderRadius:6, barPercentage:0.65, categoryPercentage:0.8 }]
     },
     options:{
       indexAxis:'y',

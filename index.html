@@ -1032,7 +1032,7 @@ function render(){
   const typeCounts = {};
   typeList.forEach(t=>typeCounts[t]=0);
   rows.forEach(r=>{ typeCounts[r.Type] = (typeCounts[r.Type]||0)+1; });
-  const typeEntries = typeList.filter(t=>t!=='').map(t=>[t, typeCounts[t]]).sort((a,b)=>b[1]-a[1]);
+  const typeEntries = typeList.filter(t=>t!=='').map(t=>[t, typeCounts[t]]).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]);
   const typeCtx = document.getElementById('typeChart');
   if(typeChart) typeChart.destroy();
   const typeGrad = typeCtx.getContext('2d').createLinearGradient(0,0,220,0);

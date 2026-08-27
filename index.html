@@ -140,6 +140,7 @@
 
   /* panels row */
   .panels{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:22px;}
+  .section-gap{margin-bottom:22px;}
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:22px 24px;
     box-shadow:0 4px 18px -10px rgba(30,20,80,.08);}
   .panel h2{font-family:'Sora';font-size:15px;font-weight:700;margin:0 0 4px;color:var(--text);}
@@ -193,6 +194,10 @@
   .status-proses{background:#FDE0F1;color:#C42186;}
   .status-reschedule{background:#F3E4FF;color:#9333CE;}
   .jam-selesai{font-size:10.5px;color:var(--selesai);font-weight:600;margin-top:4px;font-family:'JetBrains Mono';}
+  .pengganti-chip{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:700;white-space:nowrap;}
+  .pengganti-ada{background:#FFF1D6;color:#B4780A;}
+  .pengganti-tidak{background:var(--panel-soft);color:var(--text-faint);}
+  .pengganti-nopol{font-size:10.5px;color:var(--text-dim);font-family:'JetBrains Mono';margin-top:4px;white-space:nowrap;}
   td.lama{font-family:'JetBrains Mono';color:var(--text-dim);white-space:nowrap;font-size:12px;}
 
   .summary-head-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:2px;flex-wrap:wrap;}
@@ -275,28 +280,29 @@
   body.compact .date-nav button{height:29px;padding:0 10px;font-size:11px;}
   body.compact .reset-btn{padding:6px 12px;font-size:11.5px;}
 
-  body.compact .panel,body.compact .table-panel{padding:12px 16px;border-radius:12px;}
-  body.compact .panel h2,body.compact .table-panel h2{font-size:12.5px;margin-bottom:2px;}
-  body.compact .panel-sub{font-size:10.5px;margin-bottom:8px;}
+  body.compact .panel,body.compact .table-panel{padding:10px 14px;border-radius:10px;}
+  body.compact .panel h2,body.compact .table-panel h2{font-size:12px;margin-bottom:1px;}
+  body.compact .panel-sub{font-size:10px;margin-bottom:6px;}
   body.compact .summary-badge{font-size:10.5px;padding:4px 10px;}
+  body.compact .section-gap{margin-bottom:8px;}
 
-  body.compact #summaryTable thead th{padding:6px 9px;font-size:9px;}
-  body.compact #summaryTable tbody td{padding:5px 9px;font-size:11.5px;}
-  body.compact .type-bar{margin-top:3px;height:2px;}
+  body.compact #summaryTable thead th{padding:5px 8px;font-size:9px;}
+  body.compact #summaryTable tbody td{padding:4px 8px;font-size:11px;}
+  body.compact .type-bar{margin-top:2px;height:2px;}
   body.compact .type-dot{width:6px;height:6px;margin-right:5px;}
 
-  body.compact .kpis-panel{margin-bottom:10px;border-radius:12px;}
-  body.compact .kpi-cell{padding:11px 8px;}
-  body.compact .kpi-cell .icon{width:20px;height:20px;margin-bottom:4px;}
-  body.compact .kpi-cell .label{font-size:8.5px;margin-bottom:5px;}
-  body.compact .kpi-cell .value{font-size:18px;margin-bottom:3px;}
-  body.compact .kpi-cell .sub{font-size:9.5px;}
+  body.compact .kpis-panel{margin-bottom:8px;border-radius:10px;}
+  body.compact .kpi-cell{padding:8px 6px;}
+  body.compact .kpi-cell .icon{width:18px;height:18px;margin-bottom:3px;}
+  body.compact .kpi-cell .label{font-size:8px;margin-bottom:3px;}
+  body.compact .kpi-cell .value{font-size:16px;margin-bottom:2px;}
+  body.compact .kpi-cell .sub{font-size:9px;}
 
-  body.compact .panels{gap:10px;margin-bottom:10px;}
-  body.compact .chart-box{height:150px;}
-  body.compact .chart-box.small{height:120px;}
-  body.compact .cat-rows{gap:4px;margin-top:8px;}
-  body.compact .cat-row{font-size:10.5px;}
+  body.compact .panels{gap:8px;margin-bottom:8px;}
+  body.compact .chart-box{height:130px;}
+  body.compact .chart-box.small{height:105px;}
+  body.compact .cat-rows{gap:2px;margin-top:6px;}
+  body.compact .cat-row{font-size:10px;}
 
   body.compact .table-panel{display:none;}
   body.compact footer{display:none;}
@@ -359,6 +365,17 @@
       <label>Status</label>
       <select id="fStatus"></select>
     </div>
+    <div class="field">
+      <label>Lama Service</label>
+      <select id="fLama">
+        <option value="">Semua</option>
+        <option value="7">≥ 7 Hari</option>
+        <option value="14">≥ 14 Hari</option>
+        <option value="30">≥ 30 Hari</option>
+        <option value="60">≥ 60 Hari</option>
+        <option value="90">≥ 90 Hari</option>
+      </select>
+    </div>
     <div class="field search">
       <label>Cari (kode / nopol / detail)</label>
       <input type="text" id="fSearch" placeholder="cth: A81, tail gate, oli mesin...">
@@ -414,7 +431,7 @@
     </div>
   </div>
 
-  <div class="panel" style="margin-bottom:22px;">
+  <div class="panel section-gap">
     <div class="summary-head-row">
       <div>
         <h2>Total Fleet Assets per BU &amp; Tipe Armada</h2>
@@ -449,7 +466,7 @@
     </div>
   </div>
 
-  <div class="panels" style="margin-bottom:22px;">
+  <div class="panels section-gap">
     <div class="panel" style="margin-bottom:0;">
       <h2>Planned Service per BU (rentang tanggal terpilih)</h2>
       <p class="panel-sub" id="buSub">Distribusi unit yang sedang service per Business Unit</p>
@@ -460,6 +477,12 @@
       <p class="panel-sub" id="typeSub">Distribusi unit yang sedang service per Tipe Armada</p>
       <div class="chart-box" style="height:340px;"><canvas id="typeChart"></canvas></div>
     </div>
+  </div>
+
+  <div class="panel section-gap">
+    <h2>Aging Armada (Lama Service)</h2>
+    <p class="panel-sub" id="agingSub">Distribusi unit berdasarkan lama waktu di service — semakin ke kanan semakin lama</p>
+    <div class="chart-box small"><canvas id="agingChart"></canvas></div>
   </div>
 
   <div class="table-panel">
@@ -478,6 +501,7 @@
             <th data-key="BU">BU<span class="arrow"></span></th>
             <th data-key="Kategori">Kategori<span class="arrow"></span></th>
             <th data-key="Detail">Detail</th>
+            <th data-key="ArmadaPengganti">Armada Pengganti</th>
             <th data-key="Lama">Lama<span class="arrow"></span></th>
             <th data-key="Status">Status<span class="arrow"></span></th>
           </tr>
@@ -517,6 +541,16 @@ function statusClass(s){
   return { 'Delay':'status-delay','Selesai':'status-selesai','Plan':'status-plan','Queue (Antri)':'status-antri','Proses':'status-proses','Reschedule':'status-reschedule' }[s] || '';
 }
 
+// Render badge Armada Pengganti: "ADA" (dengan nopol) atau "TIDAK ADA"
+function renderArmadaPengganti(val){
+  const v = (val || '').trim();
+  const kosong = v === '' || v.toLowerCase() === 'tidak ada' || v === '-';
+  if(kosong){
+    return `<span class="pengganti-chip pengganti-tidak">TIDAK ADA</span>`;
+  }
+  return `<span class="pengganti-chip pengganti-ada">ADA</span><div class="pengganti-nopol">${v}</div>`;
+}
+
 // ---- live data state ----
 let DATA = SNAPSHOT_DATA;
 let SUMMARY_ARMADA = null;
@@ -552,6 +586,7 @@ const fTanggalTo = document.getElementById('fTanggalTo');
 const fBU = document.getElementById('fBU');
 const fKategori = document.getElementById('fKategori');
 const fStatus = document.getElementById('fStatus');
+const fLama = document.getElementById('fLama');
 const fSearch = document.getElementById('fSearch');
 
 function rebuildFiltersAndRender(){
@@ -818,7 +853,7 @@ refreshBtn.addEventListener('click', ()=>{
 });
 
 let sortKey = 'No', sortDir = 1;
-let catChart, statusChart, buChart, typeChart;
+let catChart, statusChart, buChart, typeChart, agingChart;
 if(window.ChartDataLabels){
   Chart.register(ChartDataLabels);
   Chart.defaults.set('plugins.datalabels', { display:false });
@@ -831,12 +866,20 @@ function activeRange(){
   return {from, to};
 }
 
+// Ekstrak angka hari dari string Lama, mis. "116 Hari" -> 116. "-" / kosong -> null
+function parseLama(s){
+  if(!s) return null;
+  const m = String(s).match(/\d+/);
+  return m ? parseInt(m[0], 10) : null;
+}
+
 function currentFiltered(){
   const {from, to} = activeRange();
   const fromD = parseTgl(from), toD = parseTgl(to);
   const bu = fBU.value;
   const kat = fKategori.value;
   const st = fStatus.value;
+  const lamaMin = fLama.value ? parseInt(fLama.value, 10) : null;
   const q = fSearch.value.trim().toLowerCase();
   return DATA.filter(r=>{
     const rD = parseTgl(r.Tanggal);
@@ -844,6 +887,10 @@ function currentFiltered(){
     if(bu && r.BU !== bu) return false;
     if(kat && r.Kategori !== kat) return false;
     if(st && r.Status !== st) return false;
+    if(lamaMin !== null){
+      const lamaVal = parseLama(r.Lama);
+      if(lamaVal === null || lamaVal < lamaMin) return false;
+    }
     if(q){
       const hay = (r.Kode+' '+r.Nopol+' '+r.Detail+' '+r.Type).toLowerCase();
       if(!hay.includes(q)) return false;
@@ -950,6 +997,10 @@ function render(){
     if(rD < parseTgl(rFrom) || rD > parseTgl(rTo)) return false;
     if(fKategori.value && r.Kategori !== fKategori.value) return false;
     if(fStatus.value && r.Status !== fStatus.value) return false;
+    if(fLama.value){
+      const lv = parseLama(r.Lama);
+      if(lv === null || lv < parseInt(fLama.value,10)) return false;
+    }
     return true;
   });
   const buCounts = {};
@@ -981,7 +1032,7 @@ function render(){
   const typeCounts = {};
   typeList.forEach(t=>typeCounts[t]=0);
   rows.forEach(r=>{ typeCounts[r.Type] = (typeCounts[r.Type]||0)+1; });
-  const typeEntries = typeList.map(t=>[t, typeCounts[t]]).sort((a,b)=>b[1]-a[1]);
+  const typeEntries = typeList.filter(t=>t!=='').map(t=>[t, typeCounts[t]]).sort((a,b)=>b[1]-a[1]);
   const typeCtx = document.getElementById('typeChart');
   if(typeChart) typeChart.destroy();
   const typeGrad = typeCtx.getContext('2d').createLinearGradient(0,0,220,0);
@@ -1001,6 +1052,43 @@ function render(){
       scales:{
         x:{ beginAtZero:true, ticks:{color:'#A0A4BD', font:{size:11}, precision:0}, grid:{color:'#EFF0F9'} },
         y:{ ticks:{color:'#43465C', font:{size:11, weight:500}}, grid:{display:false} }
+      }
+    }
+  });
+
+  // ---- Aging Armada (Lama Service) ----
+  document.getElementById('agingSub').textContent = `Distribusi unit berdasarkan lama waktu di service — ${rangeLabel}${fBU.value? ' · '+fBU.value:''}`;
+  const AGING_BUCKETS = [
+    { label:'0-7 Hari',   min:0,  max:7 },
+    { label:'8-14 Hari',  min:8,  max:14 },
+    { label:'15-30 Hari', min:15, max:30 },
+    { label:'31-60 Hari', min:31, max:60 },
+    { label:'> 60 Hari',  min:61, max:Infinity }
+  ];
+  const agingCounts = AGING_BUCKETS.map(()=>0);
+  rows.forEach(r=>{
+    const lv = parseLama(r.Lama);
+    if(lv === null) return;
+    const idx = AGING_BUCKETS.findIndex(b=>lv >= b.min && lv <= b.max);
+    if(idx !== -1) agingCounts[idx]++;
+  });
+  const agingCtx = document.getElementById('agingChart');
+  if(agingChart) agingChart.destroy();
+  const AGING_COLORS = ['#0FC2A6','#3D8BFF','#FFB020','#FF8A5C','#FF5A6E'];
+  agingChart = new Chart(agingCtx, {
+    type:'bar',
+    data:{
+      labels: AGING_BUCKETS.map(b=>b.label),
+      datasets:[{ data: agingCounts, backgroundColor: AGING_COLORS, borderRadius:8, barPercentage:0.6, categoryPercentage:0.7 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{ backgroundColor:'#fff', borderColor:'#EAECF6', borderWidth:1, padding:10, titleColor:'#191B2E', bodyColor:'#191B2E' },
+        datalabels:{ display:true, anchor:'end', align:'end', offset:4, color:'#43465C', font:{weight:700, size:11.5}, formatter:(v)=>v||'' } },
+      scales:{
+        x:{ ticks:{color:'#43465C', font:{size:11.5, weight:600}}, grid:{display:false} },
+        y:{ beginAtZero:true, ticks:{color:'#A0A4BD', font:{size:11}, precision:0}, grid:{color:'#EFF0F9'} }
       }
     }
   });
@@ -1028,6 +1116,7 @@ function render(){
         <td class="bu"><span class="bu-chip">${r.BU}</span></td>
         <td><span class="cat-chip"><span class="dot" style="background:${catColor(r.Kategori)}"></span>${r.Kategori}</span></td>
         <td class="detail">${r.Detail}</td>
+        <td>${renderArmadaPengganti(r.ArmadaPengganti)}</td>
         <td class="lama">${r.Lama || '—'}</td>
         <td>
           <span class="status-chip ${statusClass(r.Status)}">${r.Status}</span>
@@ -1037,13 +1126,13 @@ function render(){
   }
 }
 
-[fTanggalFrom,fTanggalTo,fBU,fKategori,fStatus].forEach(el=>el.addEventListener('change', render));
+[fTanggalFrom,fTanggalTo,fBU,fKategori,fStatus,fLama].forEach(el=>el.addEventListener('change', render));
 fSearch.addEventListener('input', render);
 document.getElementById('resetBtn').addEventListener('click', ()=>{
   const d = pickDefaultDate();
   fTanggalFrom.value = d;
   fTanggalTo.value = d;
-  fBU.value=''; fKategori.value=''; fStatus.value=''; fSearch.value='';
+  fBU.value=''; fKategori.value=''; fStatus.value=''; fLama.value=''; fSearch.value='';
   render();
 });
 document.getElementById('quickToday').addEventListener('click', ()=>{

@@ -141,6 +141,7 @@
   /* panels row */
   .panels{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:22px;}
   .section-gap{margin-bottom:22px;}
+  .sub-section-title{margin-top:18px;}
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:22px 24px;
     box-shadow:0 4px 18px -10px rgba(30,20,80,.08);}
   .panel h2{font-family:'Sora';font-size:15px;font-weight:700;margin:0 0 4px;color:var(--text);}
@@ -285,6 +286,7 @@
   body.compact .panel-sub{font-size:10px;margin-bottom:6px;}
   body.compact .summary-badge{font-size:10.5px;padding:4px 10px;}
   body.compact .section-gap{margin-bottom:8px;}
+  body.compact .sub-section-title{margin-top:8px;}
 
   body.compact #summaryTable thead th{padding:5px 8px;font-size:9px;}
   body.compact #summaryTable tbody td{padding:4px 8px;font-size:11px;}
@@ -471,18 +473,16 @@
       <h2>Planned Service per BU (rentang tanggal terpilih)</h2>
       <p class="panel-sub" id="buSub">Distribusi unit yang sedang service per Business Unit</p>
       <div class="chart-box small"><canvas id="buChart"></canvas></div>
+
+      <h2 class="sub-section-title">Aging Armada (Lama Service)</h2>
+      <p class="panel-sub" id="agingSub">Distribusi unit berdasarkan lama waktu di service — semakin ke kanan semakin lama</p>
+      <div class="chart-box small"><canvas id="agingChart"></canvas></div>
     </div>
     <div class="panel" style="margin-bottom:0;">
       <h2>Planned Service per Type</h2>
       <p class="panel-sub" id="typeSub">Distribusi unit yang sedang service per Tipe Armada</p>
       <div class="chart-box" style="height:340px;"><canvas id="typeChart"></canvas></div>
     </div>
-  </div>
-
-  <div class="panel section-gap">
-    <h2>Aging Armada (Lama Service)</h2>
-    <p class="panel-sub" id="agingSub">Distribusi unit berdasarkan lama waktu di service — semakin ke kanan semakin lama</p>
-    <div class="chart-box small"><canvas id="agingChart"></canvas></div>
   </div>
 
   <div class="table-panel">

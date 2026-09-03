@@ -131,6 +131,7 @@
   .kpi-cell.proses .icon,.kpi-cell.proses .value{color:var(--pink);}
   .kpi-cell.selesai .icon,.kpi-cell.selesai .value{color:var(--selesai);}
   .kpi-cell.reschedule .icon,.kpi-cell.reschedule .value{color:var(--reschedule);}
+  .kpi-cell.pendingmr .icon,.kpi-cell.pendingmr .value{color:#C4841D;}
   @media (max-width:980px){
     .kpis-grid{grid-template-columns:repeat(2,1fr);}
     .kpi-cell{border-right:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft);}
@@ -194,7 +195,24 @@
   .status-antri{background:#FFF1D6;color:#B4780A;}
   .status-proses{background:#FDE0F1;color:#C42186;}
   .status-reschedule{background:#F3E4FF;color:#9333CE;}
+  .status-pendingmr{background:#FCEBD1;color:#9A6410;}
   .jam-selesai{font-size:10.5px;color:var(--selesai);font-weight:600;margin-top:4px;font-family:'JetBrains Mono';}
+  .keterangan-pending{font-size:10.5px;color:#9A6410;font-weight:600;margin-top:4px;max-width:160px;white-space:normal;}
+  .pmr-card-row{display:flex;}
+  .pmr-card{
+    display:flex;align-items:center;gap:16px;background:#FCEBD1;border-radius:14px;
+    padding:16px 22px;
+  }
+  .pmr-card .icon{width:38px;height:38px;color:#9A6410;flex-shrink:0;}
+  .pmr-card .icon svg{width:100%;height:100%;}
+  .pmr-card-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:#9A6410;margin-bottom:4px;}
+  .pmr-card-value{font-family:'Sora';font-size:30px;font-weight:800;color:#9A6410;line-height:1;margin-bottom:4px;}
+  .pmr-card-sub{font-size:12px;color:#B4863C;font-weight:600;}
+  .pmr-th{text-align:left;padding:9px 12px;color:var(--text-faint);font-weight:700;text-transform:uppercase;letter-spacing:.045em;font-size:10.5px;border-bottom:2px solid var(--border);background:#FCEBD1;white-space:nowrap;}
+  #pendingMRTbody td{padding:9px 12px;border-bottom:1px solid var(--border-soft);font-size:12.5px;}
+  #pendingMRTbody td.pmr-kode{font-weight:700;color:var(--violet-deep);}
+  #pendingMRTbody td.pmr-ket{color:#9A6410;font-weight:600;}
+  #pendingMRTbody tr:hover{background:var(--panel-soft);}
   .pengganti-chip{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:700;white-space:nowrap;}
   .pengganti-ada{background:#FFF1D6;color:#B4780A;}
   .pengganti-tidak{background:var(--panel-soft);color:var(--text-faint);}
@@ -285,6 +303,13 @@
   body.compact .panel h2,body.compact .table-panel h2{font-size:12px;margin-bottom:1px;}
   body.compact .panel-sub{font-size:10px;margin-bottom:6px;}
   body.compact .summary-badge{font-size:10.5px;padding:4px 10px;}
+  body.compact .pmr-th{padding:5px 8px;font-size:9px;}
+  body.compact .pmr-card{padding:8px 14px;gap:10px;border-radius:10px;}
+  body.compact .pmr-card .icon{width:22px;height:22px;}
+  body.compact .pmr-card-label{font-size:9px;margin-bottom:2px;}
+  body.compact .pmr-card-value{font-size:18px;margin-bottom:1px;}
+  body.compact .pmr-card-sub{font-size:9.5px;}
+  body.compact #pendingMRTbody td{padding:4px 8px;font-size:11px;}
   body.compact .section-gap{margin-bottom:8px;}
   body.compact .sub-section-title{margin-top:8px;}
 
@@ -485,6 +510,37 @@
     </div>
   </div>
 
+  <div class="panel section-gap" id="pendingMRPanel" style="display:none;">
+    <div class="pmr-card-row">
+      <div class="pmr-card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg></div>
+        <div>
+          <div class="pmr-card-label">Service Selesai – Outstanding Part</div>
+          <div class="pmr-card-value" id="kpiPendingMR">0</div>
+          <div class="pmr-card-sub" id="kpiPendingMRSub">Pending MR</div>
+        </div>
+      </div>
+    </div>
+    <h2 style="margin-top:18px;">&#128221; Follow Up Service Selesai – Outstanding Part</h2>
+    <p class="panel-sub">Unit yang sudah selesai dikerjakan tapi masih menunggu part/hal lain dari bengkel MR — menampilkan <strong>semua tanggal</strong>, tidak mengikuti filter tanggal di atas</p>
+    <div style="overflow-x:auto;margin-top:12px;">
+      <table style="width:100%;border-collapse:collapse;font-size:12.8px;">
+        <thead>
+          <tr>
+            <th class="pmr-th">Tanggal Log</th>
+            <th class="pmr-th">Kode</th>
+            <th class="pmr-th">Nopol</th>
+            <th class="pmr-th">Type</th>
+            <th class="pmr-th">BU</th>
+            <th class="pmr-th">Tanggal Selesai</th>
+            <th class="pmr-th">Keterangan Pending</th>
+          </tr>
+        </thead>
+        <tbody id="pendingMRTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <div class="table-panel">
     <div class="table-head">
       <h2>Detail Armada</h2>
@@ -534,11 +590,11 @@ const CAT_COLORS = {
   'Lainnya': '#FFB020'
 };
 const STATUS_COLORS = {
-  'Delay':'#FF5A6E', 'Selesai':'#0FC2A6', 'Plan':'#3D8BFF', 'Queue (Antri)':'#FFB020', 'Proses':'#F5479C', 'Reschedule':'#B366F0'
+  'Delay':'#FF5A6E', 'Selesai':'#0FC2A6', 'Plan':'#3D8BFF', 'Queue (Antri)':'#FFB020', 'Proses':'#F5479C', 'Reschedule':'#B366F0', 'Pending MR':'#C4841D'
 };
 function catColor(cat){ return CAT_COLORS[cat] || '#A0A4BD'; }
 function statusClass(s){
-  return { 'Delay':'status-delay','Selesai':'status-selesai','Plan':'status-plan','Queue (Antri)':'status-antri','Proses':'status-proses','Reschedule':'status-reschedule' }[s] || '';
+  return { 'Delay':'status-delay','Selesai':'status-selesai','Plan':'status-plan','Queue (Antri)':'status-antri','Proses':'status-proses','Reschedule':'status-reschedule','Pending MR':'status-pendingmr' }[s] || '';
 }
 
 // Render badge Armada Pengganti: "ADA" (dengan nopol) atau "TIDAK ADA"
@@ -938,6 +994,37 @@ function render(){
   animateValue(document.getElementById('kpiResch'), byStatus['Reschedule']||0);
   document.getElementById('kpiReschSub').textContent = pct(byStatus['Reschedule']||0,total)+'% dari total';
 
+  // Pending MR: status "Pending MR" TAPI Tanggal Selesai Service sudah terisi
+  // -> artinya unit sudah selesai dikerjakan, tapi masih nunggu part/dll (lihat Keterangan Pending)
+  // Follow up Pending MR SENGAJA baca dari SEMUA data (bukan 'rows' yang sudah
+  // difilter tanggal/BU/kategori dll) — supaya item follow-up tidak "hilang"
+  // hanya karena filter tanggal di atas sedang diganti ke hari lain.
+  const pendingMRRows = DATA.filter(r=>r.Status === 'Pending MR');
+  const pendingMRSelesaiRows = pendingMRRows.filter(r=>r.TglSelesai !== '');
+  animateValue(document.getElementById('kpiPendingMR'), pendingMRSelesaiRows.length);
+  document.getElementById('kpiPendingMRSub').textContent = pendingMRRows.length > 0
+    ? `${pendingMRSelesaiRows.length} dari ${pendingMRRows.length} Pending MR (semua tanggal)`
+    : 'Tidak ada Pending MR';
+
+  const pendingMRPanel = document.getElementById('pendingMRPanel');
+  const pendingMRTbody = document.getElementById('pendingMRTbody');
+  if(pendingMRSelesaiRows.length > 0){
+    pendingMRPanel.style.display = '';
+    const pendingMRSorted = [...pendingMRSelesaiRows].sort((a,b)=>parseTgl(b.Tanggal)-parseTgl(a.Tanggal));
+    pendingMRTbody.innerHTML = pendingMRSorted.map(r=>`
+      <tr>
+        <td class="mono" style="white-space:nowrap;color:var(--text-dim);">${r.Tanggal}</td>
+        <td class="pmr-kode">${r.Kode}</td>
+        <td class="mono">${r.Nopol}</td>
+        <td>${r.Type}</td>
+        <td><span class="bu-chip">${r.BU}</span></td>
+        <td class="mono">${r.TglSelesai}</td>
+        <td class="pmr-ket">${r.KeteranganPending || '—'}</td>
+      </tr>`).join('');
+  } else {
+    pendingMRPanel.style.display = 'none';
+  }
+
   const catCounts = {};
   rows.forEach(r=>{ catCounts[r.Kategori] = (catCounts[r.Kategori]||0)+1; });
   const catEntries = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]);
@@ -1121,6 +1208,7 @@ function render(){
         <td>
           <span class="status-chip ${statusClass(r.Status)}">${r.Status}</span>
           ${r.JamSelesai ? `<div class="jam-selesai">Selesai jam ${r.JamSelesai}</div>` : ''}
+          ${r.KeteranganPending ? `<div class="keterangan-pending">Pending: ${r.KeteranganPending}</div>` : ''}
         </td>
       </tr>`).join('');
   }

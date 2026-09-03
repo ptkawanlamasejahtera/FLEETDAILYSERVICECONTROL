@@ -590,11 +590,19 @@ const CAT_COLORS = {
   'Lainnya': '#FFB020'
 };
 const STATUS_COLORS = {
-  'Delay':'#FF5A6E', 'Selesai':'#0FC2A6', 'Plan':'#3D8BFF', 'Queue (Antri)':'#FFB020', 'Proses':'#F5479C', 'Reschedule':'#B366F0', 'Pending MR':'#C4841D'
+  'Delay':'#FF5A6E', 'Selesai':'#0FC2A6', 'Plan':'#3D8BFF', 'Queue (Antri)':'#FFB020', 'Proses':'#F5479C', 'Reschedule':'#B366F0'
 };
 function catColor(cat){ return CAT_COLORS[cat] || '#A0A4BD'; }
+function getStatusColor(s){
+  if(STATUS_COLORS[s]) return STATUS_COLORS[s];
+  if((s||'').toLowerCase().includes('outstanding part')) return '#C4841D';
+  return '#A0A4BD';
+}
 function statusClass(s){
-  return { 'Delay':'status-delay','Selesai':'status-selesai','Plan':'status-plan','Queue (Antri)':'status-antri','Proses':'status-proses','Reschedule':'status-reschedule','Pending MR':'status-pendingmr' }[s] || '';
+  const exact = { 'Delay':'status-delay','Selesai':'status-selesai','Plan':'status-plan','Queue (Antri)':'status-antri','Proses':'status-proses','Reschedule':'status-reschedule' }[s];
+  if(exact) return exact;
+  if((s||'').toLowerCase().includes('outstanding part')) return 'status-pendingmr';
+  return '';
 }
 
 // Render badge Armada Pengganti: "ADA" (dengan nopol) atau "TIDAK ADA"
@@ -994,17 +1002,19 @@ function render(){
   animateValue(document.getElementById('kpiResch'), byStatus['Reschedule']||0);
   document.getElementById('kpiReschSub').textContent = pct(byStatus['Reschedule']||0,total)+'% dari total';
 
-  // Pending MR: status "Pending MR" TAPI Tanggal Selesai Service sudah terisi
-  // -> artinya unit sudah selesai dikerjakan, tapi masih nunggu part/dll (lihat Keterangan Pending)
-  // Follow up Pending MR SENGAJA baca dari SEMUA data (bukan 'rows' yang sudah
+  // Status di sheet sekarang literal "Service Selesai – Outstanding Part"
+  // -> unit sudah selesai dikerjakan tapi masih nunggu part/hal lain (lihat Keterangan Pending)
+  // Cek pakai .includes('outstanding part') biar tetap match walau tanda pisah
+  // beda (– vs -) atau ada spasi/kapital tidak konsisten di sheet.
+  // Follow up ini SENGAJA baca dari SEMUA data (bukan 'rows' yang sudah
   // difilter tanggal/BU/kategori dll) — supaya item follow-up tidak "hilang"
   // hanya karena filter tanggal di atas sedang diganti ke hari lain.
-  const pendingMRRows = DATA.filter(r=>r.Status === 'Pending MR');
-  const pendingMRSelesaiRows = pendingMRRows.filter(r=>r.TglSelesai !== '');
+  const pendingMRRows = DATA.filter(r=>(r.Status||'').trim().toLowerCase().includes('outstanding part'));
+  const pendingMRSelesaiRows = pendingMRRows;
   animateValue(document.getElementById('kpiPendingMR'), pendingMRSelesaiRows.length);
   document.getElementById('kpiPendingMRSub').textContent = pendingMRRows.length > 0
-    ? `${pendingMRSelesaiRows.length} dari ${pendingMRRows.length} Pending MR (semua tanggal)`
-    : 'Tidak ada Pending MR';
+    ? `${pendingMRRows.length} unit (semua tanggal)`
+    : 'Tidak ada Outstanding Part';
 
   const pendingMRPanel = document.getElementById('pendingMRPanel');
   const pendingMRTbody = document.getElementById('pendingMRTbody');
@@ -1062,7 +1072,7 @@ function render(){
     type:'doughnut',
     data:{
       labels: stLabels,
-      datasets:[{ data: stLabels.map(s=>byStatus[s]), backgroundColor: stLabels.map(s=>STATUS_COLORS[s]), borderWidth:4, borderColor:'#fff' }]
+      datasets:[{ data: stLabels.map(s=>byStatus[s]), backgroundColor: stLabels.map(s=>getStatusColor(s)), borderWidth:4, borderColor:'#fff' }]
     },
     options:{
       responsive:true, maintainAspectRatio:false, cutout:'68%',
@@ -1073,7 +1083,7 @@ function render(){
   });
   document.getElementById('statusRows').innerHTML = stLabels.map(s=>`
     <div class="cat-row">
-      <span class="dot" style="background:${STATUS_COLORS[s]}"></span>
+      <span class="dot" style="background:${getStatusColor(s)}"></span>
       <span class="name">${s}</span>
       <span class="count">${byStatus[s]} unit</span>
     </div>`).join('');

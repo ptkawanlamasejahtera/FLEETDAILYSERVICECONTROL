@@ -208,11 +208,24 @@
   .pmr-card-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:#9A6410;margin-bottom:4px;}
   .pmr-card-value{font-family:'Sora';font-size:30px;font-weight:800;color:#9A6410;line-height:1;margin-bottom:4px;}
   .pmr-card-sub{font-size:12px;color:#B4863C;font-weight:600;}
+  .pmr-card.delay-card{background:#FFE3E6;}
+  .pmr-card.delay-card .icon{color:#E1364F;}
+  .pmr-card.delay-card .pmr-card-label,.pmr-card.delay-card .pmr-card-value{color:#E1364F;}
+  .pmr-card.delay-card .pmr-card-sub{color:#D46B7A;}
   .pmr-th{text-align:left;padding:9px 12px;color:var(--text-faint);font-weight:700;text-transform:uppercase;letter-spacing:.045em;font-size:10.5px;border-bottom:2px solid var(--border);background:#FCEBD1;white-space:nowrap;}
+  .pmr-th.delay-th{background:#FFE3E6;}
+  #delayTbody td{padding:9px 12px;border-bottom:1px solid var(--border-soft);font-size:12.5px;}
+  #delayTbody td.pmr-kode{font-weight:700;color:var(--violet-deep);}
+  #delayTbody td.delay-lama{color:#E1364F;font-weight:700;font-family:'JetBrains Mono';}
+  #delayTbody tr:hover{background:var(--panel-soft);}
   #pendingMRTbody td{padding:9px 12px;border-bottom:1px solid var(--border-soft);font-size:12.5px;}
   #pendingMRTbody td.pmr-kode{font-weight:700;color:var(--violet-deep);}
   #pendingMRTbody td.pmr-ket{color:#9A6410;font-weight:600;}
   #pendingMRTbody tr:hover{background:var(--panel-soft);}
+  .wait-chip{display:inline-block;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+  .wait-chip.wait-short{background:#D7FAF2;color:#0A9A83;}
+  .wait-chip.wait-mid{background:#FFF1D6;color:#B4780A;}
+  .wait-chip.wait-long{background:#FFE3E6;color:#E1364F;}
   .pengganti-chip{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:700;white-space:nowrap;}
   .pengganti-ada{background:#FFF1D6;color:#B4780A;}
   .pengganti-tidak{background:var(--panel-soft);color:var(--text-faint);}
@@ -510,6 +523,37 @@
     </div>
   </div>
 
+  <div class="panel section-gap" id="delayPanel" style="display:none;">
+    <div class="pmr-card-row">
+      <div class="pmr-card delay-card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 3"/></svg></div>
+        <div>
+          <div class="pmr-card-label">Delay</div>
+          <div class="pmr-card-value" id="kpiDelayCard">0</div>
+          <div class="pmr-card-sub" id="kpiDelayCardSub">Unit Delay</div>
+        </div>
+      </div>
+    </div>
+    <h2 style="margin-top:18px;">&#9888;&#65039; Follow Up Delay</h2>
+    <p class="panel-sub" id="delaySub">Unit yang statusnya Delay pada tanggal terpilih, diurutkan dari yang paling lama tertunda.</p>
+    <div style="overflow-x:auto;margin-top:12px;">
+      <table style="width:100%;border-collapse:collapse;font-size:12.8px;">
+        <thead>
+          <tr>
+            <th class="pmr-th delay-th">Tanggal Log</th>
+            <th class="pmr-th delay-th">Kode</th>
+            <th class="pmr-th delay-th">Nopol</th>
+            <th class="pmr-th delay-th">Type</th>
+            <th class="pmr-th delay-th">BU</th>
+            <th class="pmr-th delay-th">Detail</th>
+            <th class="pmr-th delay-th">Lama Delay</th>
+          </tr>
+        </thead>
+        <tbody id="delayTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <div class="panel section-gap" id="pendingMRPanel" style="display:none;">
     <div class="pmr-card-row">
       <div class="pmr-card">
@@ -534,6 +578,7 @@
             <th class="pmr-th">BU</th>
             <th class="pmr-th">Tanggal Selesai</th>
             <th class="pmr-th">Keterangan Pending</th>
+            <th class="pmr-th">Sudah Menunggu</th>
           </tr>
         </thead>
         <tbody id="pendingMRTbody"></tbody>
@@ -1002,6 +1047,34 @@ function render(){
   animateValue(document.getElementById('kpiResch'), byStatus['Reschedule']||0);
   document.getElementById('kpiReschSub').textContent = pct(byStatus['Reschedule']||0,total)+'% dari total';
 
+  // ---- Follow Up Delay: ikut filter tanggal aktif (bukan semua tanggal),
+  // karena unit yang sama bisa tercatat berulang di banyak tanggal berbeda
+  // selama masih Delay — kalau dibaca dari semua tanggal jadi duplikat nopol.
+  const delayFollowUpRows = rows.filter(r=>(r.Status||'').trim().toLowerCase() === 'delay');
+  const delayPanel = document.getElementById('delayPanel');
+  const delayTbody = document.getElementById('delayTbody');
+  document.getElementById('delaySub').textContent = `Unit yang statusnya Delay pada ${rangeLabel}${fBU.value? ' · '+fBU.value:''}, diurutkan dari yang paling lama tertunda.`;
+  animateValue(document.getElementById('kpiDelayCard'), delayFollowUpRows.length);
+  document.getElementById('kpiDelayCardSub').textContent = delayFollowUpRows.length > 0
+    ? `${delayFollowUpRows.length} unit (${rangeLabel})`
+    : 'Tidak ada Delay';
+  if(delayFollowUpRows.length > 0){
+    delayPanel.style.display = '';
+    const delaySorted = [...delayFollowUpRows].sort((a,b)=>(parseLama(b.Lama)||0)-(parseLama(a.Lama)||0));
+    delayTbody.innerHTML = delaySorted.map(r=>`
+      <tr>
+        <td class="mono" style="white-space:nowrap;color:var(--text-dim);">${r.Tanggal}</td>
+        <td class="pmr-kode">${r.Kode}</td>
+        <td class="mono">${r.Nopol}</td>
+        <td>${r.Type}</td>
+        <td><span class="bu-chip">${r.BU}</span></td>
+        <td>${r.Detail || '—'}</td>
+        <td class="delay-lama">${r.Lama || '—'}</td>
+      </tr>`).join('');
+  } else {
+    delayPanel.style.display = 'none';
+  }
+
   // Status di sheet sekarang literal "Service Selesai – Outstanding Part"
   // -> unit sudah selesai dikerjakan tapi masih nunggu part/hal lain (lihat Keterangan Pending)
   // Cek pakai .includes('outstanding part') biar tetap match walau tanda pisah
@@ -1021,7 +1094,13 @@ function render(){
   if(pendingMRSelesaiRows.length > 0){
     pendingMRPanel.style.display = '';
     const pendingMRSorted = [...pendingMRSelesaiRows].sort((a,b)=>parseTgl(b.Tanggal)-parseTgl(a.Tanggal));
-    pendingMRTbody.innerHTML = pendingMRSorted.map(r=>`
+    const todayD = parseTgl(getTodayId());
+    pendingMRTbody.innerHTML = pendingMRSorted.map(r=>{
+      const refDate = r.TglSelesai ? parseTgl(r.TglSelesai) : parseTgl(r.Tanggal);
+      const waitDays = Math.round((todayD - refDate) / 86400000);
+      const waitLabel = waitDays < 0 ? '—' : (waitDays === 0 ? 'Hari ini' : `${waitDays} Hari`);
+      const waitClass = waitDays >= 7 ? 'wait-long' : (waitDays >= 3 ? 'wait-mid' : 'wait-short');
+      return `
       <tr>
         <td class="mono" style="white-space:nowrap;color:var(--text-dim);">${r.Tanggal}</td>
         <td class="pmr-kode">${r.Kode}</td>
@@ -1030,7 +1109,9 @@ function render(){
         <td><span class="bu-chip">${r.BU}</span></td>
         <td class="mono">${r.TglSelesai}</td>
         <td class="pmr-ket">${r.KeteranganPending || '—'}</td>
-      </tr>`).join('');
+        <td><span class="wait-chip ${waitClass}">${waitLabel}</span></td>
+      </tr>`;
+    }).join('');
   } else {
     pendingMRPanel.style.display = 'none';
   }

@@ -383,10 +383,6 @@
       </div>
       <div class="status-row">
         <button class="reset-btn" id="refreshBtn" style="white-space:nowrap;display:none;">&#8635; Refresh Data</button>
-        <label class="auto-refresh-toggle" id="autoRefreshWrap" style="display:none;">
-          <input type="checkbox" id="autoRefreshChk" checked>
-          <span>Auto-refresh <span id="autoRefreshCountdown" class="mono"></span></span>
-        </label>
         <div class="live-badge" id="liveBadge"><span class="live-dot" id="liveDot" style="background:#A0A4BD;"></span> <span id="liveText">Snapshot (belum tersambung)</span></div>
       </div>
     </div>
@@ -839,8 +835,6 @@ async function loadLiveData(url){
     const now = new Date();
     setLiveStatus('ok', `Live · update ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} · ${DATA.length} baris`);
     refreshBtn.style.display = 'inline-flex';
-    autoRefreshWrap.style.display = 'flex';
-    startAutoRefresh();
   }catch(err){
     console.error(err);
     setLiveStatus('error', 'Gagal konek (' + err.message + ') — pakai snapshot');
@@ -973,48 +967,6 @@ connectBtn.addEventListener('click', ()=>{
   const url = gasUrlInput.value.trim();
   if(!url){ setLiveStatus('error', 'URL kosong'); return; }
   loadLiveData(url);
-});
-
-// ---- Auto Refresh ----
-const AUTO_REFRESH_MS = 20 * 1000; // 20 detik — mendekati real-time tanpa membebani Apps Script
-const autoRefreshWrap = document.getElementById('autoRefreshWrap');
-const autoRefreshChk = document.getElementById('autoRefreshChk');
-const autoRefreshCountdown = document.getElementById('autoRefreshCountdown');
-let autoRefreshTimer = null;
-let autoRefreshCountdownTimer = null;
-let autoRefreshSecondsLeft = 0;
-
-function stopAutoRefresh(){
-  if(autoRefreshTimer) clearInterval(autoRefreshTimer);
-  if(autoRefreshCountdownTimer) clearInterval(autoRefreshCountdownTimer);
-  autoRefreshTimer = null;
-  autoRefreshCountdownTimer = null;
-  autoRefreshCountdown.textContent = '';
-}
-
-function startAutoRefresh(){
-  stopAutoRefresh();
-  if(!autoRefreshChk.checked) return;
-  const url = gasUrlInput.value.trim();
-  if(!url) return;
-
-  autoRefreshSecondsLeft = AUTO_REFRESH_MS / 1000;
-  autoRefreshCountdown.textContent = `(${autoRefreshSecondsLeft}s)`;
-  autoRefreshCountdownTimer = setInterval(()=>{
-    autoRefreshSecondsLeft--;
-    if(autoRefreshSecondsLeft <= 0){ autoRefreshCountdown.textContent = ''; }
-    else{ autoRefreshCountdown.textContent = `(${autoRefreshSecondsLeft}s)`; }
-  }, 1000);
-
-  autoRefreshTimer = setInterval(()=>{
-    const u = gasUrlInput.value.trim();
-    if(u) loadLiveData(u);
-    autoRefreshSecondsLeft = AUTO_REFRESH_MS / 1000;
-  }, AUTO_REFRESH_MS);
-}
-
-autoRefreshChk.addEventListener('change', ()=>{
-  if(autoRefreshChk.checked) startAutoRefresh(); else stopAutoRefresh();
 });
 
 const compactBtn = document.getElementById('compactBtn');

@@ -214,6 +214,18 @@
   .pmr-card.delay-card .pmr-card-sub{color:#D46B7A;}
   .pmr-th{text-align:left;padding:9px 12px;color:var(--text-faint);font-weight:700;text-transform:uppercase;letter-spacing:.045em;font-size:10.5px;border-bottom:2px solid var(--border);background:#FCEBD1;white-space:nowrap;}
   .pmr-th.delay-th{background:#FFE3E6;}
+  .downtime-filter-row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-top:14px;}
+  .downtime-summary{
+    font-size:13px;font-weight:700;color:var(--violet-deep);background:var(--panel-soft);
+    padding:9px 16px;border-radius:20px;white-space:nowrap;align-self:center;
+  }
+  .dt-th{text-align:left;padding:9px 12px;color:var(--text-faint);font-weight:700;text-transform:uppercase;letter-spacing:.045em;font-size:10.5px;border-bottom:2px solid var(--border);background:var(--panel-soft);white-space:nowrap;}
+  #downtimeTbody td{padding:9px 12px;border-bottom:1px solid var(--border-soft);font-size:12.5px;white-space:nowrap;}
+  #downtimeTbody td.dt-detail{white-space:normal;max-width:260px;}
+  #downtimeTbody td.dt-kode{font-weight:700;color:var(--violet-deep);}
+  #downtimeTbody td.dt-lama{font-family:'JetBrains Mono';font-weight:700;color:#E1364F;}
+  #downtimeTbody td.dt-blank{color:var(--text-faint);}
+  #downtimeTbody tr:hover{background:var(--panel-soft);}
   #delayTbody td{padding:9px 12px;border-bottom:1px solid var(--border-soft);font-size:12.5px;}
   #delayTbody td.pmr-kode{font-weight:700;color:var(--violet-deep);}
   #delayTbody td.delay-lama{color:#E1364F;font-weight:700;font-family:'JetBrains Mono';}
@@ -616,6 +628,52 @@
     </div>
   </div>
 
+  <div class="panel section-gap" id="downtimePanel">
+    <h2>&#128176; Rekap Downtime (Klaim ke MR)</h2>
+    <p class="panel-sub">Unit yang service-nya <strong>lebih dari 2 hari TANPA armada pengganti</strong> — dasar klaim tagihan ke bengkel MR. Sudah di-dedup per insiden (bukan per baris log harian).</p>
+
+    <div class="downtime-filter-row">
+      <div class="field">
+        <label>Cutoff Dari (Tgl Masuk)</label>
+        <select id="fCutoffFrom"></select>
+      </div>
+      <div class="field">
+        <label>Cutoff Sampai (Tgl Masuk)</label>
+        <select id="fCutoffTo"></select>
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button class="reset-btn" id="downtimeAllBtn">Semua Periode</button>
+      </div>
+      <div class="filter-spacer"></div>
+      <div class="downtime-summary" id="downtimeSummary">0 insiden</div>
+    </div>
+
+    <div style="overflow-x:auto;margin-top:14px;">
+      <table style="width:100%;border-collapse:collapse;font-size:12.8px;">
+        <thead>
+          <tr>
+            <th class="dt-th">No</th>
+            <th class="dt-th">Kode</th>
+            <th class="dt-th">Nopol</th>
+            <th class="dt-th">Type</th>
+            <th class="dt-th">BU</th>
+            <th class="dt-th">Kategori SVC</th>
+            <th class="dt-th">Keterangan SVC</th>
+            <th class="dt-th">Tgl Mulai SVC</th>
+            <th class="dt-th">Tgl Selesai SVC</th>
+            <th class="dt-th">Lama Perbaikan</th>
+          </tr>
+        </thead>
+        <tbody id="downtimeTbody"></tbody>
+      </table>
+      <div class="empty-state" id="downtimeEmpty" style="display:none;padding:30px 20px;">
+        <div class="glyph">&#128176;</div>
+        Tidak ada insiden downtime &gt;2 hari tanpa armada pengganti pada periode ini.
+      </div>
+    </div>
+  </div>
+
   <footer>Sumber: Google Sheets "4. Update Service Armada DC Jababeka 2026 Terupdate" — sheet Daily Service · snapshot beberapa tanggal (data lengkap terbatas oleh kapasitas ekspor).</footer>
 
 </div>
@@ -650,20 +708,25 @@ function statusClass(s){
   return '';
 }
 
+// Cek apakah Armada Pengganti kosong/tidak ada
+function isArmadaPenggantiKosong(val){
+  const v = (val || '').trim();
+  return v === '' || v.toLowerCase() === 'tidak ada' || v === '-';
+}
+
 // Render badge Armada Pengganti: "ADA" (dengan nopol) atau "TIDAK ADA"
 function renderArmadaPengganti(val){
-  const v = (val || '').trim();
-  const kosong = v === '' || v.toLowerCase() === 'tidak ada' || v === '-';
+  const kosong = isArmadaPenggantiKosong(val);
   if(kosong){
     return `<span class="pengganti-chip pengganti-tidak">TIDAK ADA</span>`;
   }
-  return `<span class="pengganti-chip pengganti-ada">ADA</span><div class="pengganti-nopol">${v}</div>`;
+  return `<span class="pengganti-chip pengganti-ada">ADA</span><div class="pengganti-nopol">${(val||'').trim()}</div>`;
 }
 
 // ---- live data state ----
 let DATA = SNAPSHOT_DATA;
 let SUMMARY_ARMADA = null;
-let tanggalList = [], buList = [], katList = [], statusList = [], typeList = [];
+let tanggalList = [], buList = [], katList = [], statusList = [], typeList = [], tglMasukList = [];
 
 function uniqSorted(arr){ return [...new Set(arr)].sort(); }
 const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,Mei:4,Jun:5,Jul:6,Agu:7,Sep:8,Okt:9,Nov:10,Des:11};
@@ -697,6 +760,8 @@ const fKategori = document.getElementById('fKategori');
 const fStatus = document.getElementById('fStatus');
 const fLama = document.getElementById('fLama');
 const fSearch = document.getElementById('fSearch');
+const fCutoffFrom = document.getElementById('fCutoffFrom');
+const fCutoffTo = document.getElementById('fCutoffTo');
 
 function rebuildFiltersAndRender(){
   tanggalList = uniqSorted(DATA.map(r=>r.Tanggal));
@@ -716,7 +781,18 @@ function rebuildFiltersAndRender(){
   fTanggalFrom.value = defaultDate;
   fTanggalTo.value = defaultDate;
 
+  // Dropdown periode cutoff untuk Rekap Downtime, berbasis Tanggal Masuk Service
+  tglMasukList = uniqSorted(DATA.map(r=>r.TglMasuk).filter(t=>t!==''));
+  tglMasukList.sort((a,b)=>parseTgl(a)-parseTgl(b));
+  if(tglMasukList.length > 0){
+    fCutoffFrom.innerHTML = tglMasukList.map(t=>`<option value="${t}">${t}</option>`).join('');
+    fCutoffTo.innerHTML = tglMasukList.map(t=>`<option value="${t}">${t}</option>`).join('');
+    fCutoffFrom.value = tglMasukList[0];
+    fCutoffTo.value = tglMasukList[tglMasukList.length-1];
+  }
+
   render();
+  renderDowntimeRecap();
 }
 
 // ---- live connection to Google Apps Script Web App ----
@@ -980,6 +1056,75 @@ function parseLama(s){
   if(!s) return null;
   const m = String(s).match(/\d+/);
   return m ? parseInt(m[0], 10) : null;
+}
+
+/**
+ * Rekap Downtime untuk klaim ke MR: unit yang service-nya >2 hari TANPA
+ * armada pengganti. Di-dedup per insiden (Kode + Tanggal Masuk) karena unit
+ * yang sama tercatat berulang tiap hari selama masih berstatus service —
+ * diambil baris TERBARU (Tanggal log paling akhir) per insiden supaya
+ * datanya paling update (Lama, Tanggal Selesai kalau sudah ada, dll).
+ * Filter periode cutoff berdasarkan Tanggal Masuk Service.
+ */
+function renderDowntimeRecap(){
+  const tbody = document.getElementById('downtimeTbody');
+  const emptyState = document.getElementById('downtimeEmpty');
+  const summary = document.getElementById('downtimeSummary');
+  if(!tbody) return;
+
+  // 1. Dedup per insiden (Kode + TglMasuk), ambil baris dengan Tanggal log terbaru
+  const incidentMap = {};
+  DATA.forEach(r=>{
+    if(!r.TglMasuk) return; // tanpa Tanggal Masuk, insiden tidak bisa diidentifikasi
+    const key = r.Kode + '|' + r.TglMasuk;
+    const existing = incidentMap[key];
+    if(!existing || parseTgl(r.Tanggal) > parseTgl(existing.Tanggal)){
+      incidentMap[key] = r;
+    }
+  });
+  const incidents = Object.values(incidentMap);
+
+  // 2. Filter: tanpa armada pengganti + lama > 2 hari + dalam rentang cutoff
+  const cutoffFrom = fCutoffFrom.value, cutoffTo = fCutoffTo.value;
+  let cf = cutoffFrom ? parseTgl(cutoffFrom) : null;
+  let ct = cutoffTo ? parseTgl(cutoffTo) : null;
+  if(cf && ct && cf > ct){ [cf,ct] = [ct,cf]; }
+
+  const filtered = incidents.filter(r=>{
+    if(!isArmadaPenggantiKosong(r.ArmadaPengganti)) return false;
+    const lv = parseLama(r.Lama);
+    if(lv === null || lv <= 2) return false;
+    if(cf && ct){
+      const tm = parseTgl(r.TglMasuk);
+      if(tm < cf || tm > ct) return false;
+    }
+    return true;
+  });
+
+  filtered.sort((a,b)=>parseTgl(a.TglMasuk)-parseTgl(b.TglMasuk));
+
+  summary.textContent = `${filtered.length} insiden`;
+
+  if(filtered.length === 0){
+    tbody.innerHTML = '';
+    emptyState.style.display = 'block';
+    return;
+  }
+  emptyState.style.display = 'none';
+
+  tbody.innerHTML = filtered.map((r,i)=>`
+    <tr>
+      <td class="mono">${i+1}</td>
+      <td class="dt-kode">${r.Kode}</td>
+      <td class="mono">${r.Nopol}</td>
+      <td>${r.Type}</td>
+      <td><span class="bu-chip">${r.BU}</span></td>
+      <td>${r.Kategori}</td>
+      <td class="dt-detail">${r.Detail || '—'}</td>
+      <td class="mono">${r.TglMasuk || '—'}</td>
+      <td class="mono ${r.TglSelesai? '' : 'dt-blank'}">${r.TglSelesai || '—'}</td>
+      <td class="dt-lama">${r.Lama || '—'}</td>
+    </tr>`).join('');
 }
 
 function currentFiltered(){
@@ -1334,6 +1479,16 @@ document.querySelectorAll('thead th').forEach(th=>{
     th.querySelector('.arrow').textContent = sortDir===1 ? ' ▲' : ' ▼';
     render();
   });
+});
+
+fCutoffFrom.addEventListener('change', renderDowntimeRecap);
+fCutoffTo.addEventListener('change', renderDowntimeRecap);
+document.getElementById('downtimeAllBtn').addEventListener('click', ()=>{
+  if(tglMasukList.length > 0){
+    fCutoffFrom.value = tglMasukList[0];
+    fCutoffTo.value = tglMasukList[tglMasukList.length-1];
+  }
+  renderDowntimeRecap();
 });
 
 rebuildFiltersAndRender();
